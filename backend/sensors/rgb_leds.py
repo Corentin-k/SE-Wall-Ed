@@ -24,13 +24,13 @@ def main():
     switchSetpup()
     run = True
     while run :
-        switch(1, 9)
-        switch(1, 25)
-        switch(1, 11)
+        switch(1, 5)
+        switch(1, 6)
+        switch(1, 13)
         time.sleep(1)
-        switch(0, 9)
-        switch(0, 25)
-        switch(0, 11)
+        switch(0, 5)
+        switch(0, 6)
+        switch(0, 13)
         time.sleep(1)
 
 main()
