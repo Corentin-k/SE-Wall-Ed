@@ -21,6 +21,7 @@ class RGBLEDs:
         self.R_R = None
         self.R_G = None
         self.R_B = None
+        self.setup()
 
     def setup(self):
         self.L_R = PWM(pin=self.Left_R, initial_value=1.0, frequency=2000)
@@ -31,19 +32,25 @@ class RGBLEDs:
         self.R_B = PWM(pin=self.Right_B, initial_value=1.0, frequency=2000)
     
     def highled(self, led,value):
-        value = map_value(value, 0, 255, 0, 1.00)
+        self.L_R.value = 1.0
+        self.L_G.value = 1.0
+        self.L_B.value = 1.0
+        self.R_R.value = 1.0
+        self.R_G.value = 1.0
+        self.R_B.value = 1.0
+        
         if led == 'L_R':
-            self.L_R.value = value
+            self.L_R.value = 0
         elif led == 'L_G':
-            self.L_G.value = value
+            self.L_G.value = 0
         elif led == 'L_B':
-            self.L_B.value = value
+            self.L_B.value = 0
         elif led == 'R_R':
-            self.R_R.value = value
+            self.R_R.value = 0
         elif led == 'R_G':
-            self.R_G.value = value
+            self.R_G.value = 0
         elif led == 'R_B':
-            self.R_B.value = value
+            self.R_B.value = 0
 
     def setAllColor(self, col):
         """col: int, couleur hex ex: 0x112233"""
@@ -85,10 +92,10 @@ class RGBLEDs:
         self.R_G.close()
         self.R_B.close()
 
-if __name__ == "__main__":
-    leds = RGBLEDs(17, 27, 22, 10, 9, 11) 
-    leds.setup()
-    try:
-        leds.loop()
-    except KeyboardInterrupt:
-        leds.destroy()
+# if __name__ == "__main__":
+#     leds = RGBLEDs(17, 27, 22, 10, 9, 11) 
+#     leds.setup()
+#     try:
+#         leds.loop()
+#     except KeyboardInterrupt:
+#         leds.destroy()

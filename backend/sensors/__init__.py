@@ -1,6 +1,6 @@
 ﻿from .camera         import Camera
 from .ultrasonics    import UltrasonicSensor
-from .motor          import Motor
+from .motor2          import Motor
 from .line_tracking  import LineTracker
 from .light_tracking import LightTracker
 from .servomotors    import ServoMotor
