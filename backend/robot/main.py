@@ -1,7 +1,7 @@
 ﻿# robot/main.py
 import logging
 from sensors.motor import Motor
-
+from controller import start_colors
 logger = logging.getLogger(__name__)
 
 class Robot:
@@ -30,11 +30,11 @@ class Robot:
     def stop(self):
         logger.info("Robot stopping")
         self.motor.stop()
+    def led(self):
+        start_colors()
 
-    
 # main
 if __name__ == "__main__":
     robot = Robot()
-    robot.move_forward(5)
-    robot.stop()
+    robot.led()
     print("Robot operations completed.")
