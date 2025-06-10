@@ -1,11 +1,20 @@
 ﻿import RPi.GPIO as GPIO
 from gpiozero import PWMOutputDevice as PWM
-import time
 
-colors = [0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0xFF00FF, 0x00FFFF, 0x6F00D2, 0xFF5809]
 
 def map_value(x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
+def hex_to_rgb(hex_value: str) -> tuple[int,int,int]:
+
+    hex_value = hex_value.lstrip('#')
+    if len(hex_value) == 3:
+        hex_value = ''.join(c*2 for c in hex_value)
+    r = int(hex_value[0:2], 16)
+    g = int(hex_value[2:4], 16)
+    b = int(hex_value[4:6], 16)
+    return (r, g, b)
+
 
 class RGBLEDs:
     def __init__(self, left_r, left_g, left_b, right_r, right_g, right_b):
@@ -78,11 +87,17 @@ class RGBLEDs:
         self.R_G.value = 1.0 - G_val
         self.R_B.value = 1.0 - B_val
 
-    def loop(self):
-        while True:
-            for col in colors:
-                self.setAllColor(col)
-                time.sleep(0.5)
+    
+    def set_color_hex(self, hex_value: str):
+        r, g, b = hex_to_rgb(hex_value)
+        self.setAllRGBColor(r, g, b)
+    def clear_all(self):
+        self.L_R.value = 1.0
+        self.L_G.value = 1.0
+        self.L_B.value = 1.0
+        self.R_R.value = 1.0
+        self.R_G.value = 1.0
+        self.R_B.value = 1.0
 
     def destroy(self):
         self.L_R.close()
@@ -92,10 +107,3 @@ class RGBLEDs:
         self.R_G.close()
         self.R_B.close()
 
-# if __name__ == "__main__":
-#     leds = RGBLEDs(17, 27, 22, 10, 9, 11) 
-#     leds.setup()
-#     try:
-#         leds.loop()
-#     except KeyboardInterrupt:
-#         leds.destroy()
