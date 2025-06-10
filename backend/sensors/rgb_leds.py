@@ -6,9 +6,9 @@ def switchSetpup() :
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
 
-    GPIO.setup(9, GPIO.OUT)  
-    GPIO.setup(25, GPIO.OUT)  
-    GPIO.setup(11, GPIO.OUT)  
+    GPIO.setup(5, GPIO.OUT)  
+    GPIO.setup(6, GPIO.OUT)  
+    GPIO.setup(13, GPIO.OUT)  
 
 def switch(status, gpio):
     if status == 1:
