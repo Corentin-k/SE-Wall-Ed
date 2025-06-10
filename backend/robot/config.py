@@ -1,12 +1,18 @@
 ﻿# robot/config.py
 
 # GPIO pins
-ULTRASONIC_TRIGGER_PIN = 23
-ULTRASONIC_ECHO_PIN    = 24
-MOTOR_IN1              = 17
-MOTOR_IN2              = 27
-MOTOR_ENA              = 22
+
+# Led 
+LED1 = 9
+LED2 = 25
+LED3 = 11
 
 
-# Modes disponibles
-MODES = ["idle", "obstacle_avoidance", "line_follow", "light_follow"]
+# Led RGB à l'avant du robot
+left_R = 0
+left_G = 19
+left_B = 13
+
+right_R = 1
+right_G = 5
+right_B = 6
