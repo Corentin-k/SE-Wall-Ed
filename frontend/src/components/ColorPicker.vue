@@ -31,6 +31,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import axios from "axios";
 
 export default defineComponent({
   name: "ColorPicker",
@@ -90,27 +91,27 @@ export default defineComponent({
     async sendColor() {
       console.log("Envoi de la couleur :", this.displayColor);
       try {
-        const response = await fetch("http://10.3.208.73:5000/led/color", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
+        const response = await axios.post(
+          "http://10.3.208.73:5000/led/color",
+          {
             color: this.displayColor,
-          }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          console.error("Erreur côté serveur :", error);
-          alert("Erreur : " + error.error);
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        console.log("Réponse du serveur :", response.data);
+      } catch (err: any) {
+        if (err.response) {
+          console.error("Erreur côté serveur :", err.response.data);
+          alert("Erreur : " + err.response.data.error);
         } else {
-          const result = await response.json();
-          console.log("Succès :", result);
+          console.error("Erreur réseau :", err);
+
+          alert("Erreur de connexion au robot.");
         }
-      } catch (err) {
-        console.error("Erreur réseau :", err);
-        alert("Erreur de connexion au robot.");
       }
     },
   },
