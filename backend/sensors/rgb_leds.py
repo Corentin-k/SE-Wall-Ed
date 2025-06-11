@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-﻿import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 from gpiozero import PWMOutputDevice as PWM
 
 
@@ -108,6 +107,3 @@ class RGBLEDs:
         self.R_G.close()
         self.R_B.close()
 
-=======
-﻿
->>>>>>> 1d48b1cdec5cd9327b17f39a21e9ad51ac8d4a7c
