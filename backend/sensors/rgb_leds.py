@@ -9,10 +9,10 @@ def map_value(x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
 
-def hex_to_rgb(hex_value: str) -> tuple[int,int,int]:
+def hex_to_rgb(hex_value: str) -> tuple[int, int, int]:
     hex_value = hex_value.lstrip('#')
     if len(hex_value) == 3:
-        hex_value = ''.join(c*2 for c in hex_value)
+        hex_value = ''.join(c * 2 for c in hex_value)
     r = int(hex_value[0:2], 16)
     g = int(hex_value[2:4], 16)
     b = int(hex_value[4:6], 16)
@@ -42,16 +42,14 @@ class RGBLEDs:
         self.R_G = PWM(pin=self.Right_G, initial_value=1.0, frequency=2000)
         self.R_B = PWM(pin=self.Right_B, initial_value=1.0, frequency=2000)
 
-    def highled(self, led):
-        # Éteint toutes
-        self.clear_all()
-        # Allume la LED demandée
-        if led == 'L_R': self.L_R.value = 0
-        elif led == 'L_G': self.L_G.value = 0
-        elif led == 'L_B': self.L_B.value = 0
-        elif led == 'R_R': self.R_R.value = 0
-        elif led == 'R_G': self.R_G.value = 0
-        elif led == 'R_B': self.R_B.value = 0
+    def highled(self, leds):
+        for led in leds:
+            if led == 'L_R': self.L_R.value = 0
+            elif led == 'L_G': self.L_G.value = 0
+            elif led == 'L_B': self.L_B.value = 0
+            elif led == 'R_R': self.R_R.value = 0
+            elif led == 'R_G': self.R_G.value = 0
+            elif led == 'R_B': self.R_B.value = 0
 
     def setAllColor(self, col):
         R_val = (col & 0xff0000) >> 16
@@ -114,9 +112,7 @@ colors = [0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0xFF00FF, 0x00FFFF, 0x6F00D2, 
 def start_colors():
     leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
     leds.setup()
-    pressed = set()
 
-    # Initialisation de l'écran curses
     stdscr = curses.initscr()
     curses.noecho()
     curses.cbreak()
@@ -124,8 +120,11 @@ def start_colors():
     stdscr.keypad(True)
 
     try:
-        stdscr.addstr(0, 0, "Maintenez r/g/b/u/v/n pour allumer, relâchez pour éteindre, q pour quitter.")
+        stdscr.addstr(0, 0, "Appuyez sur r/g/b/u/v/n pour allumer une ou plusieurs LEDs, q pour quitter.")
         stdscr.refresh()
+
+        pressed = set()
+
         while True:
             ch = stdscr.getch()
             if ch != curses.ERR:
@@ -137,13 +136,19 @@ def start_colors():
                     break
                 if key in MAPPING:
                     pressed.add(key)
-            # Réinitialise puis applique l'état des touches
+            # Gestion du relâchement des touches (nécessite un délai)
+            released = set()
+            for key in pressed:
+                if not curses.is_term_resized(*stdscr.getmaxyx()):
+                    if stdscr.getch() == -1:
+                        released.add(key)
+            pressed.difference_update(released)
+
             leds.clear_all()
-            for key in list(pressed):
-                leds.highled(MAPPING[key])
+            leds.highled([MAPPING[k] for k in pressed])
+
             time.sleep(0.05)
     finally:
-        # Restaure le terminal
         curses.nocbreak()
         stdscr.keypad(False)
         curses.echo()
