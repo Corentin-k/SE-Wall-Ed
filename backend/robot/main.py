@@ -4,19 +4,12 @@ import sys
 import os
 import busio
 
-<<<<<<< HEAD
 from adafruit_pca9685 import PCA9685
 from board import SCL, SDA
 import threading
 import time
-=======
 import busio
 
-from adafruit_pca9685 import PCA9685
-from board import SCL, SDA
-
-
->>>>>>> 87e4cc9 (things are changing)
 from sensors import *
 
 from robot.config import *
