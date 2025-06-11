@@ -67,12 +67,6 @@ def video_feed():
     return Response(gen(),
         mimetype='multipart/x-mixed-replace;boundary=frame')
 
-@robot_routes.route('/camera')
-def video_feed():
-    """Route de streaming vidéo. À placer dans l'attribut src d'une balise img."""
-    return Response(gen(),
-                    mimetype='multipart/x-mixed-replace;boundary=frame')
-
 def gen():
     """Fonction génératrice de flux vidéo."""
     while True:
