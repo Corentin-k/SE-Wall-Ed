@@ -33,16 +33,17 @@ class RGBLEDs:
         self.R_G = PWM(pin=self.Right_G, initial_value=1.0, frequency=2000)
         self.R_B = PWM(pin=self.Right_B, initial_value=1.0, frequency=2000)
 
-    def highled(self, leds):
-        if not leds:
-            return
-        for led in leds:
-            if led == 'L_R': self.L_R.value = 0
-            elif led == 'L_G': self.L_G.value = 0
-            elif led == 'L_B': self.L_B.value = 0
-            elif led == 'R_R': self.R_R.value = 0
-            elif led == 'R_G': self.R_G.value = 0
-            elif led == 'R_B': self.R_B.value = 0
+    def update_leds(self, pressed_keys):
+        leds = {
+            'L_R': self.L_R,
+            'L_G': self.L_G,
+            'L_B': self.L_B,
+            'R_R': self.R_R,
+            'R_G': self.R_G,
+            'R_B': self.R_B,
+        }
+        for name, pwm in leds.items():
+            pwm.value = 0 if name in pressed_keys else 1.0
 
     def setAllColor(self, col):
         R_val = (col & 0xff0000) >> 16
@@ -108,6 +109,7 @@ def start_colors():
     curses.noecho()
     curses.cbreak()
     stdscr.nodelay(True)
+    stdscr.keypad(True)
 
     try:
         stdscr.addstr(0, 0, "Appuyez sur r/g/b/u/v/n pour allumer une ou plusieurs LEDs, q pour quitter.")
@@ -121,12 +123,16 @@ def start_colors():
                 if ch == ord('q'):
                     break
                 elif ch in MAPPING:
-                    pressed.add(ch)
-            else:
-                time.sleep(0.01)
+                    pressed.add(MAPPING[ch])
+            
+            # Vérifie si des touches ne sont plus pressées
+            for key, led_name in MAPPING.items():
+                if curses.keyname(key).decode().lower() not in curses.getsyx():
+                    if led_name in pressed:
+                        pressed.discard(led_name)
 
-            leds.clear_all()
-            leds.highled([MAPPING[c] for c in pressed])
+            leds.update_leds(pressed)
+            time.sleep(0.05)
 
     finally:
         curses.nocbreak()
