@@ -4,7 +4,7 @@ import sys
 import os
 
 from sensors import *
-from controller import start_colors
+
 from robot.config import *
 
 
@@ -16,6 +16,7 @@ class Robot:
     def __init__(self):
         self.motor = Motor()
         self.leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
+        self.leds.setup()
         logger.info("Robot initialized")
 
     def move_forward(self, speed):
