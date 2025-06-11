@@ -103,19 +103,17 @@ class Motors:
                 speed_diff = max(-max_diff, speed_diff)
 
             next_target_speed = current_speed + speed_diff
-            if abs(next_target_speed) > abs(target_speed):
-                next_target_speed = target_speed
 
             self.set_speed(abs(next_target_speed), next_target_speed > 0)
             if target_speed == current_speed:
                 break
-            asyncio.sleep(1 / self.smooth_step_count)
+            await asyncio.sleep(1 / self.smooth_step_count)
 
 
-    def smooth_speed(self, target_speed, forward = True):
+    def smooth_speed(self, target_speed, forward = True, acceleration = 50):
         if(self.smooth_motor_task != None):
             self.smooth_motor_task.cancel()
-        self.smooth_motor_task = asyncio.create_task(self.__smooth_speed__(target_speed))
+        self.smooth_motor_task = asyncio.create_task(self.__smooth_speed__(target_speed, forward, acceleration))
         return self.smooth_motor_task
 
 
