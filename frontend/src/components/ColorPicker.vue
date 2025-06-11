@@ -90,7 +90,7 @@ export default defineComponent({
     async sendColor() {
       console.log("Envoi de la couleur :", this.displayColor);
       try {
-        const response = await fetch("http://localhost:5000/led/color", {
+        const response = await fetch("http://10.3.208.73:5000/led/color", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
