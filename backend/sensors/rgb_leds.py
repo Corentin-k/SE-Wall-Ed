@@ -30,9 +30,10 @@ class RGBLEDs:
         self.R_R = None
         self.R_G = None
         self.R_B = None
-        self.setup()
+        
 
     def setup(self):
+        self.setup()
         self.L_R = PWM(pin=self.Left_R, initial_value=1.0, frequency=2000)
         self.L_G = PWM(pin=self.Left_G, initial_value=1.0, frequency=2000)
         self.L_B = PWM(pin=self.Left_B, initial_value=1.0, frequency=2000)
