@@ -4,10 +4,19 @@ import sys
 import os
 import busio
 
+<<<<<<< HEAD
 from adafruit_pca9685 import PCA9685
 from board import SCL, SDA
 import threading
 import time
+=======
+import busio
+
+from adafruit_pca9685 import PCA9685
+from board import SCL, SDA
+
+
+>>>>>>> 87e4cc9 (things are changing)
 from sensors import *
 
 from robot.config import *
@@ -20,6 +29,7 @@ logger = logging.getLogger(__name__)
 class Robot:
     def __init__(self):
         self.motor = Motor()
+        self.camera = Camera()
         self.leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
         self.leds.setup()
 
@@ -42,8 +52,6 @@ class Robot:
         self.pan_servo = ServoMotors(pca, channel=PAN_CHANNEL, initial_angle=90, step_size=2)
         self.tilt_servo = ServoMotors(pca, channel=TILT_CHANNEL, initial_angle=90, step_size=2)
     
-    
-
     def move_forward(self, speed):
         logger.info("Robot moving forward at speed %d", speed)
         self.motor.set_speed(speed)
@@ -68,6 +76,9 @@ class Robot:
     def led(self,hex):
          self.leds.set_color_hex(hex)
 
+    def get_camera_frame(self):
+        return self.camera.get_frame()
+        
     def movehead(self, pan, tilt):
         """
         Déplace la tête du robot en ajustant les servos de panoramique et d'inclinaison.
@@ -78,6 +89,7 @@ class Robot:
             self.pan_servo.move_increment(pan)
         if tilt != 0:
             self.tilt_servo.move_increment(tilt)
+            
     def _head_loop(self, pan: int, tilt: int, interval: float = 0.05):
         while True:
             with self._head_lock:
@@ -109,7 +121,3 @@ class Robot:
             self._head_thread.join()
 
 # main
-if __name__ == "__main__":
-    robot = Robot()
-    robot.led("#FF8800")
-    print("Robot operations completed.")

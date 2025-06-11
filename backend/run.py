@@ -22,4 +22,4 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, cleanup_and_exit)
     atexit.register(lambda: robot.leds.destroy())
 
-    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)
+    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False, threaded=True)

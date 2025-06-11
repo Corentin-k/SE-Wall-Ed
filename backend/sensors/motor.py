@@ -1,4 +1,4 @@
-﻿import logging
+import logging
 import time
 from board import SCL, SDA
 import busio
@@ -61,7 +61,7 @@ class Motors:
             self.motor3.throttle = speed
         elif channel == 4:
             self.motor4.throttle = speed
-
+            
     def coast_motor(self, channel):
         if channel == 1:
             self.motor1.decay_mode = (motor.FAST_DECAY)
@@ -81,13 +81,12 @@ class Motors:
             self.motor3.decay_mode = (motor.SLOW_DECAY)
         elif channel == 4:
             self.motor4.decay_mode = (motor.SLOW_DECAY)
-
     def uncoast(self):
         self.uncoast_motor(1)
 
     def coast(self):
         self.coast_motor(1)
-
+        
     def set_speed(self, speed: int, forward = True):
         self.set_motor_speed(1, speed, forward)
 
@@ -135,4 +134,4 @@ async def main():
         motors.set_speed(0)
 
 if __name__ == "__main__":
-     asyncio.run(main())
+    asyncio.run(main())

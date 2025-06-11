@@ -27,17 +27,17 @@ class LineTracker:
         middle = status['middle']
         right = status['right']
 
-        if middle == 0:
-            scGear.moveAngle(0, 0)
-            move.move(80, 1, "mid")
-        elif left == 0:
-            scGear.moveAngle(0, 30)
-            move.move(80, 1, "left")
-        elif right == 0:
-            scGear.moveAngle(0, -30)
-            move.move(80, 1, "right")
-        else:
-            move.move(0, 1, "no")
+        # if middle == 0:
+        #     scGear.moveAngle(0, 0)
+        #     move.move(80, 1, "mid")
+        # elif left == 0:
+        #     scGear.moveAngle(0, 30)
+        #     move.move(80, 1, "left")
+        # elif right == 0:
+        #     scGear.moveAngle(0, -30)
+        #     move.move(80, 1, "right")
+        # else:
+        #     move.move(0, 1, "no")
 
         print(left, middle, right)
         time.sleep(0.1)

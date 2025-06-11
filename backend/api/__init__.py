@@ -7,7 +7,7 @@ def create_app(robot=None):
     
     app = Flask(__name__)
     # Pendant le dev, on ouvre tout
-    CORS(app, resources={r"/*": {"origins": "*"}})
+    CORS(app)
     set_robot_instance(robot)
     # Enregistrement de tes routes
     app.register_blueprint(robot_routes)

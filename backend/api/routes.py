@@ -1,4 +1,5 @@
-﻿from flask import Blueprint, request, jsonify
+﻿from flask import Blueprint, request, jsonify, Response
+
 
 
 robot_routes = Blueprint('robot_routes', __name__)
@@ -74,3 +75,29 @@ def servo_start_route():
 def servo_stop_route():
     robot.stop_head()
     return jsonify({"message": "Servo head STOP"}), 200
+def gen():
+    """Videostreaminggeneratorfunction."""
+    while True:
+        frame = robot.get_camera_frame()
+        yield(b'--frame\r\n'
+            b'Content-Type:image/jpeg\r\n\r\n'+frame+b'\r\n')
+
+
+@robot_routes.route('/camera')
+def video_feed():
+    """Videostreamingroute.Putthisinthesrcattributeofanimgtag."""
+    return Response(gen(),
+        mimetype='multipart/x-mixed-replace;boundary=frame')
+
+@robot_routes.route('/servo/move', methods=['POST'])
+def servo_move_route():
+    data = request.get_json() or {}
+    direction = data.get("direction")
+    if not direction:
+        return jsonify({"error": "No servo direction provided"}), 400
+    try:
+        pan, tilt = map(int, direction.split(","))
+    except Exception:
+        return jsonify({"error": "Invalid servo direction format"}), 400
+    robot.movehead(pan, tilt)
+    return jsonify({"message": f"Servo moved: pan={pan}, tilt={tilt}"})

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿import time
+=======
+import time
+>>>>>>> 87e4cc9 (things are changing)
 from board import SCL, SDA
 import busio
 from adafruit_motor import servo
@@ -170,4 +174,8 @@ def start_servos_control():
         print("Programme terminé.")
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     start_servos_control()
+=======
+    start_servos_control()
+>>>>>>> 87e4cc9 (things are changing)
