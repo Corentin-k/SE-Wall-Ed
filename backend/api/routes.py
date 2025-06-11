@@ -1,9 +1,13 @@
 ﻿from flask import Blueprint, request, jsonify
-from robot.main import Robot  # Import de la classe Robot
 
-robot = Robot()  # Instance unique partagée
+
 robot_routes = Blueprint('robot_routes', __name__)
+robot = None
 
+def set_robot_instance(r):
+    global robot
+    robot = r
+    
 @robot_routes.route('/motor/stop', methods=['POST'])
 def motor_stop_route():
     robot.stop()
