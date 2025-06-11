@@ -1,5 +1,5 @@
 <template>
-  <div class="command-head">
+  <div class="command-head" tabindex="0" @keydown="onKeyDown" @keyup="onKeyUp">
     <h2>Command Head</h2>
     <div class="button-container">
       <div class="row top-row">
@@ -15,87 +15,59 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted, onBeforeUnmount } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
 
-const headKeys = reactive(new Set<string>()); // Garde une trace des touches actuellement enfoncées
+const headKeys = ref(new Set<string>());
 
-// Fonction pour envoyer la commande combinée au serveur
 async function sendCombinedHeadCommand() {
-  let pan = 0;
-  let tilt = 0;
+  let pan = 0,
+    tilt = 0;
 
-  // Détermine la direction de pan et tilt basée sur les touches enfoncées
-  if (headKeys.has('l')) { // L pour Pan Right
-    pan = 1;
-  } else if (headKeys.has('j')) { // J pour Pan Left
-    pan = -1;
-  }
+  if (headKeys.value.has("l")) pan = 1;
+  else if (headKeys.value.has("j")) pan = -1;
 
-  if (headKeys.has('i')) { // I pour Tilt Up
-    tilt = 1;
-  } else if (headKeys.has('k')) { // K pour Tilt Down
-    tilt = -1;
-  }
+  if (headKeys.value.has("i")) tilt = 1;
+  else if (headKeys.value.has("k")) tilt = -1;
 
-  // --- LOGS ADDED IN VUE.JS ---
-  console.log(`[Vue.js] Current headKeys: ${Array.from(headKeys).join(', ')}`);
-  console.log(`[Vue.js] Calculated pan: ${pan}, tilt: ${tilt}`);
-  // --- END LOGS ADDED ---
+  console.log("pan=", pan, "tilt=", tilt);
 
-  // Si aucune touche de mouvement n'est enfoncée, arrêter le mouvement
+  const url = "http://10.3.208.73:5000/servo";
   if (pan === 0 && tilt === 0) {
-    console.log("[Vue.js] Sending servo/stop command."); // Log additionnel
-    await axios.post("http://10.3.208.73:5000/servo/stop")
-      .then(response => console.log("[Vue.js] Servo stop success:", response.data))
-      .catch(error => console.error("[Vue.js] Servo stop error:", error));
+    await axios.post(`${url}/stop`);
   } else {
-    console.log(`[Vue.js] Sending servo/start command with {pan: ${pan}, tilt: ${tilt}}.`); // Log additionnel
-    await axios.post("http://10.3.208.73:5000/servo/start", { pan, tilt })
-      .then(response => console.log("[Vue.js] Servo start success:", response.data))
-      .catch(error => console.error("[Vue.js] Servo start error:", error));
+    await axios.post(`${url}/start`, { pan, tilt });
   }
 }
 
-function onHeadKeyDown(e: KeyboardEvent) {
+function onKeyDown(e: KeyboardEvent) {
   const k = e.key.toLowerCase();
-  const validKeys = ["i", "j", "k", "l"];
-
-  if (!validKeys.includes(k) || headKeys.has(k)) {
-    return; // Ignorer si la touche n'est pas pertinente ou est déjà enfoncée
+  if (!["i", "j", "k", "l"].includes(k)) return;
+  if (!headKeys.value.has(k)) {
+    headKeys.value.add(k);
+    sendCombinedHeadCommand();
   }
-
-  headKeys.add(k); // Ajouter la touche aux touches enfoncées
-  console.log(`[Vue.js] KeyDown: ${k}, headKeys now: ${Array.from(headKeys).join(', ')}`); // Log additionnel
-  sendCombinedHeadCommand(); // Envoyer la nouvelle commande combinée
 }
 
-function onHeadKeyUp(e: KeyboardEvent) {
+function onKeyUp(e: KeyboardEvent) {
   const k = e.key.toLowerCase();
-  
-  if (!headKeys.has(k)) {
-    return; // Ignorer si la touche n'était pas enfoncée
+  if (headKeys.value.delete(k)) {
+    sendCombinedHeadCommand();
   }
-
-  headKeys.delete(k); // Retirer la touche des touches enfoncées
-  console.log(`[Vue.js] KeyUp: ${k}, headKeys now: ${Array.from(headKeys).join(', ')}`); // Log additionnel
-  sendCombinedHeadCommand(); // Envoyer la nouvelle commande combinée (pour arrêter ou ajuster le mouvement)
 }
 
 onMounted(() => {
-  window.addEventListener("keydown", onHeadKeyDown);
-  window.addEventListener("keyup", onHeadKeyUp);
-  console.log("[Vue.js] Head command listeners mounted."); // Log additionnel
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener("keydown", onHeadKeyDown);
-  window.removeEventListener("keyup", onHeadKeyUp);
-  console.log("[Vue.js] Head command listeners unmounted."); // Log additionnel
+  // focus to capture keys
+  const el = document.querySelector(".command-head") as HTMLElement;
+  el.focus();
 });
 </script>
 
 <style scoped>
+.command-head {
+  outline: none;
+}
+
 /* Styles inchangés */
 button.active {
   outline: 3px solid var(--default-color);
