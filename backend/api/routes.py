@@ -67,6 +67,18 @@ def video_feed():
     return Response(gen(),
         mimetype='multipart/x-mixed-replace;boundary=frame')
 
+@robot_routes.route('/camera')
+def video_feed():
+    """Route de streaming vidéo. À placer dans l'attribut src d'une balise img."""
+    return Response(gen(),
+                    mimetype='multipart/x-mixed-replace;boundary=frame')
+
+def gen():
+    """Fonction génératrice de flux vidéo."""
+    while True:
+        frame = robot.get_camera_frame()
+        yield(b'--frame\r\n'
+              b'Content-Type:image/jpeg\r\n\r\n'+frame+b'\r\n')
 # ---------------Servo Motors---------------------------------------
 @robot_routes.route('/servo/start', methods=['POST'])
 def servo_start_route():
