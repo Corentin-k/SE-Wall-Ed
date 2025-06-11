@@ -4,10 +4,8 @@ import curses
 import time
 from robot.config import Left_R, Left_G, Left_B, Right_R, Right_G, Right_B
 
-
 def map_value(x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
-
 
 def hex_to_rgb(hex_value: str) -> tuple[int, int, int]:
     hex_value = hex_value.lstrip('#')
@@ -18,7 +16,6 @@ def hex_to_rgb(hex_value: str) -> tuple[int, int, int]:
     b = int(hex_value[4:6], 16)
     return (r, g, b)
 
-
 class RGBLEDs:
     def __init__(self, left_r, left_g, left_b, right_r, right_g, right_b):
         self.Left_R = left_r
@@ -27,12 +24,6 @@ class RGBLEDs:
         self.Right_R = right_r
         self.Right_G = right_g
         self.Right_B = right_b
-        self.L_R = None
-        self.L_G = None
-        self.L_B = None
-        self.R_R = None
-        self.R_G = None
-        self.R_B = None
 
     def setup(self):
         self.L_R = PWM(pin=self.Left_R, initial_value=1.0, frequency=2000)
@@ -43,6 +34,8 @@ class RGBLEDs:
         self.R_B = PWM(pin=self.Right_B, initial_value=1.0, frequency=2000)
 
     def highled(self, leds):
+        if not leds:
+            return
         for led in leds:
             if led == 'L_R': self.L_R.value = 0
             elif led == 'L_G': self.L_G.value = 0
@@ -96,18 +89,16 @@ class RGBLEDs:
         self.R_G.close()
         self.R_B.close()
 
-
 MAPPING = {
-    'r': 'L_R',
-    'g': 'L_G',
-    'b': 'L_B',
-    'u': 'R_R',
-    'v': 'R_G',
-    'n': 'R_B',
+    ord('r'): 'L_R',
+    ord('g'): 'L_G',
+    ord('b'): 'L_B',
+    ord('u'): 'R_R',
+    ord('v'): 'R_G',
+    ord('n'): 'R_B',
 }
 
 colors = [0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0xFF00FF, 0x00FFFF, 0x6F00D2, 0xFF5809]
-
 
 def start_colors():
     leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
@@ -117,7 +108,6 @@ def start_colors():
     curses.noecho()
     curses.cbreak()
     stdscr.nodelay(True)
-    stdscr.keypad(True)
 
     try:
         stdscr.addstr(0, 0, "Appuyez sur r/g/b/u/v/n pour allumer une ou plusieurs LEDs, q pour quitter.")
@@ -128,33 +118,22 @@ def start_colors():
         while True:
             ch = stdscr.getch()
             if ch != curses.ERR:
-                try:
-                    key = chr(ch)
-                except ValueError:
-                    continue
-                if key == 'q':
+                if ch == ord('q'):
                     break
-                if key in MAPPING:
-                    pressed.add(key)
-            # Gestion du relâchement des touches (nécessite un délai)
-            released = set()
-            for key in pressed:
-                if not curses.is_term_resized(*stdscr.getmaxyx()):
-                    if stdscr.getch() == -1:
-                        released.add(key)
-            pressed.difference_update(released)
+                elif ch in MAPPING:
+                    pressed.add(ch)
+            else:
+                time.sleep(0.01)
 
             leds.clear_all()
-            leds.highled([MAPPING[k] for k in pressed])
+            leds.highled([MAPPING[c] for c in pressed])
 
-            time.sleep(0.05)
     finally:
         curses.nocbreak()
         stdscr.keypad(False)
         curses.echo()
         curses.endwin()
         leds.destroy()
-
 
 def color_loop():
     leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
@@ -169,14 +148,12 @@ def color_loop():
     finally:
         leds.destroy()
 
-
 def test_hex_colors():
     leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
     leds.setup()
     leds.set_color_hex("#FF8800")
     time.sleep(2)
     leds.destroy()
-
 
 if __name__ == "__main__":
     start_colors()
