@@ -16,6 +16,7 @@ if __name__ == "__main__":
     # on enregistre la destruction pour la fin de vie du process
     def cleanup_and_exit(*args):
         robot.leds.destroy()
+        robot.camera.destroy()
         sys.exit(0)
 
     signal.signal(signal.SIGINT, cleanup_and_exit)

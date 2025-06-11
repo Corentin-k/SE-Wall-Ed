@@ -16,6 +16,7 @@ class Camera:
     last_access = 0  # time of last client access to the camera
     slow = False  # flag to slow down the camera thread if no clients are connected
     # event = CameraEvent()
+    _stop_event = threading.Event()
 
     def __init__(self):
         """Start the background camera thread if it isn't running yet."""
@@ -68,6 +69,9 @@ class Camera:
         frames_iterator = cls.frames()
         try:
             for frame in frames_iterator:
+                if cls._stop_event.is_set():
+                    print('Camera destroy requested, stopping thread.')
+                    break
                 Camera.frame = frame
                 # Camera.event.set()  # send signal to clients
                 time.sleep(0)
@@ -88,9 +92,19 @@ class Camera:
             Camera.frame = None
             # Camera.event.set()  # signal that thread has stopped
             
- 
+    def destroy(self):
+        """Arrête proprement le thread caméra et libère les ressources."""
+        Camera._stop_event.set()
+        if Camera.thread is not None:
+            Camera.thread.join(timeout=2)
+        Camera.thread = None
+        Camera.frame = None
+        Camera.last_access = 0
+        Camera.slow = False
+        Camera._stop_event.clear()
 
- 
+
+    
  
 
  
