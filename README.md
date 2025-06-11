@@ -4,6 +4,8 @@
 
 Dans le cadre du MasterCamp « Systèmes embarqués » de troisième année à l’EFREI, nous avons conçu ("allons concevoir") **Wall-Ed**, un robot autonome capable de se déplacer, de percevoir son environnement et d’interagir avec celui-ci.
 
+<img src="./img/robot.jpg" alt="Logo Wall-Ed" width="400" align="right">
+
 Pour cette première partie, l’objectif était de mettre en place les fondations logicielles et matérielles : communication client-serveur et commande des capteurs (moteurs, servos, LEDs).
 
 ## Architecture générale
