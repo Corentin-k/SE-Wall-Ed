@@ -59,45 +59,36 @@ def set_led_color_route():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ---------------Servo Motors---------------------------------------
-@robot_routes.route('/servo/start', methods=['POST'])
-def servo_start_route():
-    data = request.get_json() or {}
-    try:
-        pan, tilt = map(int, data['direction'].split(","))
-    except Exception:
-        return jsonify({"error": "Invalid format"}), 400
-    robot.start_head(pan, tilt)
-    return jsonify({"message": "Servo head START"})
 
-
-@robot_routes.route('/servo/stop', methods=['POST'])
-def servo_stop_route():
-    robot.stop_head()
-    return jsonify({"message": "Servo head STOP"}), 200
-def gen():
-    """Videostreaminggeneratorfunction."""
-    while True:
-        frame = robot.get_camera_frame()
-        yield(b'--frame\r\n'
-            b'Content-Type:image/jpeg\r\n\r\n'+frame+b'\r\n')
-
-
+# ---------------Camera Streaming---------------------------------------
 @robot_routes.route('/camera')
 def video_feed():
     """Videostreamingroute.Putthisinthesrcattributeofanimgtag."""
     return Response(gen(),
         mimetype='multipart/x-mixed-replace;boundary=frame')
 
-@robot_routes.route('/servo/move', methods=['POST'])
-def servo_move_route():
+# ---------------Servo Motors---------------------------------------
+@robot_routes.route('/servo/start', methods=['POST'])
+def servo_start_route():
     data = request.get_json() or {}
-    direction = data.get("direction")
-    if not direction:
-        return jsonify({"error": "No servo direction provided"}), 400
+    # Expect 'pan' and 'tilt' directly as integers from the frontend
+    pan = data.get('pan', 0)
+    tilt = data.get('tilt', 0)
+
     try:
-        pan, tilt = map(int, direction.split(","))
-    except Exception:
-        return jsonify({"error": "Invalid servo direction format"}), 400
-    robot.movehead(pan, tilt)
-    return jsonify({"message": f"Servo moved: pan={pan}, tilt={tilt}"})
+        # Ensure they are integers, although the frontend should send them as such
+        pan = int(pan)
+        tilt = int(tilt)
+    except ValueError:
+        return jsonify({"error": "Invalid pan or tilt value. Must be integer."}), 400
+    
+    # Call robot.start_head with the combined pan and tilt values
+    # This will handle stopping any existing head movement thread and starting a new one
+    # with the combined directions, enabling simultaneous control.
+    robot.start_head(pan, tilt)
+    return jsonify({"message": f"Servo head movement started: pan={pan}, tilt={tilt}"})
+
+@robot_routes.route('/servo/stop', methods=['POST'])
+def servo_stop_route():
+    robot.stop_head()
+    return jsonify({"message": "Servo head STOP"}), 200
