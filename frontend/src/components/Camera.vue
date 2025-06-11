@@ -1,7 +1,7 @@
 <template>
   <div class="camera">
     <h2>Camera</h2>
-    <video ref="videoElement" autoplay playsinline></video>
+    <img src="http://10.3.208.73:5000/camera" alt="Video Stream" />
   </div>
 </template>
 
@@ -38,7 +38,7 @@ onBeforeUnmount(() => {
   color: white;
 }
 
-video {
+img {
   width: 100%;
   max-height: 400px;
   border: 2px solid #bb86fc;
