@@ -40,3 +40,16 @@ def motor_speed_route():
         return jsonify({"message": f"Motor speed set to {speed}"})
     else:
         return jsonify({"error": "Speed not provided"}), 400
+
+
+@robot_routes.route('/led/color', methods=['POST'])
+def set_led_color_route():
+    data = request.get_json() or {}
+    color_hex = data.get("color")
+    if not color_hex:
+        return jsonify({"error": "No color provided"}), 400
+    try:
+        robot.led(color_hex)
+        return jsonify({"message": f"LED color set to {color_hex}"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

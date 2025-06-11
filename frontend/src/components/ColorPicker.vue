@@ -1,32 +1,14 @@
 <template>
   <div class="color-picker">
-    <h2>
-      LED Strip Control
-      <font-awesome-icon
-        v-if="connected"
-        :icon="['fas', 'check']"
-        class="connected-icon"
-      />
-      <font-awesome-icon
-        v-else
-        :icon="['fas', 'xmark']"
-        class="disconnected-icon"
-      />
-    </h2>
+    <h2>LED Strip Control</h2>
 
-    <div
-      class="color-display"
-      :style="{ backgroundColor: displayColor }"
-      :class="{ 'disabled-color-input': !connected }"
-    ></div>
+    <div class="color-display" :style="{ backgroundColor: displayColor }"></div>
 
     <input
       type="color"
       v-model="selectedColor"
       @input="updateColor"
       class="color-input"
-      :disabled="!connected"
-      :class="{ 'disabled-color-input': !connected }"
     />
 
     <div class="intensity-control">
@@ -39,26 +21,11 @@
         max="100"
         @input="updateColor"
         class="intensity-slider"
-        :disabled="!connected"
-        :class="{ 'disabled-color-input': !connected }"
       />
       <span>{{ intensity }}%</span>
     </div>
 
-    <button v-if="error" @click="refreshData" class="refresh-button">
-      <font-awesome-icon :icon="['fas', 'sync-alt']" /> Refresh
-    </button>
-    <button v-if="loading" disabled class="loading-button">
-      <font-awesome-icon :icon="['fas', 'spinner']" spin /> Loading...
-    </button>
-    <button
-      v-else
-      @click="sendColor"
-      class="apply-button"
-      :disabled="!connected"
-    >
-      Apply Color
-    </button>
+    <button @click="sendColor" class="apply-button">Apply Color</button>
   </div>
 </template>
 
@@ -120,52 +87,42 @@ export default defineComponent({
         number
       ];
     },
-
-    // Fonction pour envoyer la couleur sélectionnée à l'ESP32
-
     async sendColor() {
-      this.loading = true;
-      this.error = false;
+      console.log("Envoi de la couleur :", this.displayColor);
       try {
-        this.connected = true;
-        console.log("Color set successfully");
-      } catch (error) {
-        console.error("Error setting color:", error);
-        this.error = true;
-      } finally {
-        this.loading = false;
-      }
-    },
+        const response = await fetch("http://localhost:5000/led/color", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            color: this.displayColor,
+          }),
+        });
 
-    // Fonction pour vérifier la connexion avec l'ESP32
-    async checkConnection() {
-      this.loading = true;
-      this.error = false;
-      try {
-        this.connected = true;
-        console.log("ESP32 is connected");
-      } catch (error) {
-        console.error("ESP32 is not connected:", error);
-        this.error = true;
-        this.connected = false;
-      } finally {
-        this.loading = false;
+        if (!response.ok) {
+          const error = await response.json();
+          console.error("Erreur côté serveur :", error);
+          alert("Erreur : " + error.error);
+        } else {
+          const result = await response.json();
+          console.log("Succès :", result);
+        }
+      } catch (err) {
+        console.error("Erreur réseau :", err);
+        alert("Erreur de connexion au robot.");
       }
-    },
-    // Fonction pour rafraîchir les données
-    refreshData() {
-      this.error = false;
-      this.loading = true;
-      this.connected = false;
-      this.updateColor();
-      this.checkConnection();
     },
   },
+  // Fonction pour rafraîchir les données
+  refreshData() {
+    this.updateColor();
+  },
+
   mounted() {
     // Initialisation de la couleur d'affichage avec la couleur sélectionnée par défaut lorsqu'on ouvre la page
     // et vérification de la connexion avec l'ESP32
     this.updateColor();
-    this.checkConnection();
   },
 });
 </script>
@@ -187,14 +144,6 @@ export default defineComponent({
 h2 {
   color: #03dac6;
   margin-bottom: 1.5rem;
-}
-
-.connected-icon {
-  color: #03dac6;
-}
-
-.disconnected-icon {
-  color: #ff5252;
 }
 
 .color-display {
@@ -244,9 +193,7 @@ h2 {
   margin: 0 1rem;
 }
 
-.apply-button,
-.refresh-button,
-.loading-button {
+.apply-button {
   width: 100%;
   padding: 0.75rem;
   color: #121212;
@@ -264,18 +211,5 @@ h2 {
 
 .apply-button:hover {
   background-color: var(--default-color) + "#9969da";
-}
-
-.refresh-button {
-  background-color: #03dac6;
-  margin-bottom: 1rem;
-}
-
-.refresh-button:hover {
-  background-color: #00b3a6;
-}
-
-.loading-button {
-  background-color: #ffca28;
 }
 </style>

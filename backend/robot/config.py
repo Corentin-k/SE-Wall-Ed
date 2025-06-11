@@ -9,10 +9,9 @@ LED3 = 11
 
 
 # Led RGB à l'avant du robot
-left_R = 0
-left_G = 19
-left_B = 13
-
-right_R = 1
-right_G = 5
-right_B = 6
+Left_R = 13
+Left_G = 19
+Left_B = 0
+Right_R = 1
+Right_G = 5
+Right_B = 6

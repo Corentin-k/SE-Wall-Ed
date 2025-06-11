@@ -1,12 +1,22 @@
 ﻿# robot/main.py
 import logging
-from sensors.motor import Motor
+import sys
+import os
+
+from sensors import *
+
+from robot.config import *
+
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 logger = logging.getLogger(__name__)
 
 class Robot:
     def __init__(self):
         self.motor = Motor()
+        self.leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
+        self.leds.setup()
         logger.info("Robot initialized")
 
     def move_forward(self, speed):
@@ -30,11 +40,11 @@ class Robot:
     def stop(self):
         logger.info("Robot stopping")
         self.motor.stop()
+    def led(self,hex):
+         self.leds.set_color_hex(hex)
 
-    
 # main
 if __name__ == "__main__":
     robot = Robot()
-    robot.move_forward(5)
-    robot.stop()
+    robot.led("#FF8800")
     print("Robot operations completed.")
