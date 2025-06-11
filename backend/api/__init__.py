@@ -1,6 +1,6 @@
 ﻿from flask import Flask
 from flask_cors import CORS
-from .routes import robot_routes , robot
+from .routes import robot_routes , set_robot_instance
 from flasgger import Swagger
 
 def create_app(robot=None):

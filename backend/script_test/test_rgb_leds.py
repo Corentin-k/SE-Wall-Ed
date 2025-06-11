@@ -13,6 +13,7 @@ MAPPING = {
 }
 def start_colors():
     leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
+    leds.setup()
     pressed = set()
 
     def on_down(e):

@@ -40,7 +40,7 @@ class RGBLEDs:
         self.R_G = PWM(pin=self.Right_G, initial_value=1.0, frequency=2000)
         self.R_B = PWM(pin=self.Right_B, initial_value=1.0, frequency=2000)
     
-    def highled(self, led,value):
+    def highled(self, led):
         self.L_R.value = 1.0
         self.L_G.value = 1.0
         self.L_B.value = 1.0
