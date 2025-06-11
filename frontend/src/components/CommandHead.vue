@@ -21,7 +21,7 @@ import axios from "axios";
 const headKeys = reactive(new Set<string>());
 
 async function sendHead(direction: string) {
-  await axios.post("/head", { direction });
+  await axios.post("http://10.3.208.73:5000/servo/start", { direction });
 }
 
 function onHeadKeyDown(e: KeyboardEvent) {
@@ -29,13 +29,15 @@ function onHeadKeyDown(e: KeyboardEvent) {
   if (!["i", "j", "k", "l"].includes(k) || headKeys.has(k)) return;
 
   headKeys.add(k);
-  const dirMap: Record<string, string> = {
-    i: "up",
-    j: "left",
-    k: "down",
-    l: "right",
-  };
-  sendHead(dirMap[k]);
+  if (k === "i") {
+    sendHead("0,1");
+  } else if (k === "j") {
+    sendHead("-1,0");
+  } else if (k === "k") {
+    sendHead("0,-1");
+  } else if (k === "l") {
+    sendHead("1,0");
+  }
 }
 
 function onHeadKeyUp(e: KeyboardEvent) {
@@ -43,7 +45,7 @@ function onHeadKeyUp(e: KeyboardEvent) {
   if (!headKeys.has(k)) return;
 
   headKeys.delete(k);
-  sendHead("stop");
+  axios.post("http://10.3.208.73:5000/servo/stop").catch(console.error);
 }
 
 onMounted(() => {

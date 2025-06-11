@@ -1,76 +1,4 @@
-﻿# import time
-# from board import SCL, SDA
-# import busio
-# from adafruit_motor import servo
-# from adafruit_pca9685 import PCA9685
-
-# i2c = busio.I2C(SCL, SDA)
-# # Create a simple PCA9685 class instance.
-# pca = PCA9685(i2c, address=0x5f) 
-
-# pca.frequency = 50
-
-# # The pulse range is 750 - 2250 by default. This range typicall# range, but the default is to use 180 degrees. You can specify># servo7 = servo.Servo(pca.channels[7], actuation_range=135)
-# def set_angle(ID, angle):
-#     servo_angle = servo.Servo(pca.channels[ID], min_pulse=500, max_pulse=2400,actuation_range=180)
-#     servo_angle.angle = angle
-
-# def test(channel):
-#     for i in range(180): # The servo turns from 0 to 180 degree        
-#         set_angle(channel, i)
-#         time.sleep(0.01)                                           
-#     time.sleep(0.5)
-#     for i in range(180): # The servo turns from 180 to 0 degree        
-#         set_angle(channel, 180-i)
-#         time.sleep(0.01)
-#     time.sleep(0.5)
-
-
-
-# if __name__ == "__main__":
-#     channel = 2
-#     while True:
-#         test(channel)
-
-
-
-
-# import time
-# from adafruit_motor import servo
-
-# class ServoMotors:
-#     def __init__ (self, pca, channel, min_pulse, max_pulse, actuation_range):
-#         self.pca = pca 
-#         self.channel = channel
-#         self.servo = servo.Servo(pca.channels[channel], min_pulse = min_pulse, max_pulse = max_pulse, actuation_range = actuation_range)
-#     def set_angle(self, angle):
-#         self.servo.angle = angle
-#     def test(self):
-#         for i in range(180):        
-#             self.set_angle(i)
-#             time.sleep(0.01)    
-#         time.sleep(0.5)
-#         for i in range(180):    
-#             self.set_angle(180 - i)
-#             time.sleep(0.01)
-#         time.sleep(0.5)
-#     def run_test(self):
-#         while True:
-#             self.test()
-    
-
-# if __name__ == "__main__":
-#     from board import SCL, SDA
-#     import busio
-#     from adafruit_pca9685 import PCA9685
-
-#     i2c = busio.I2C(SCL, SDA)
-#     pca = PCA9685(i2c, address=0x5f) 
-#     pca.frequency = 50
-#     servo_motor = ServoMotors(pca, channel=1, min_pulse= 500, max_pulse = 2400, actuation_range=180)
-#     servo_motor.run_test()
-
-import time
+﻿import time
 from board import SCL, SDA
 import busio
 from adafruit_motor import servo
@@ -116,7 +44,64 @@ class ServoMotors:
         """
         Arrête le servo en le remettant à une position centrale (90 degrés).
         """
-        self.set_angle(90) 
+        self.set_angle(90)
+
+
+    
+def start_servos_control():
+    i2c = busio.I2C(SCL, SDA)
+    pca = PCA9685(i2c, address=0x5f) 
+    pca.frequency = 50 
+
+    PAN_CHANNEL = 1  
+    TILT_CHANNEL = 2 
+    
+    pan_servo = ServoMotors(pca, channel=PAN_CHANNEL, initial_angle=90, step_size=2)
+    tilt_servo = ServoMotors(pca, channel=TILT_CHANNEL, initial_angle=90, step_size=2)
+
+    # Variables d'état pour suivre la direction de mouvement actuelle de chaque servo
+    # 0 = arrêté, 1 = direction positive, -1 = direction négative
+    current_pan_direction = 0
+    current_tilt_direction = 0
+
+    print("Contrôle des servos avec les touches A/D (Pan) et W/S (Tilt).")
+    print("Appuyez sur 'Esc' pour quitter le programme.")
+
+   
+            
+    new_pan_dir = 0 
+    if keyboard.is_pressed('d'): # Si 'd' est appuyée, direction droite
+        new_pan_dir = 1
+    elif keyboard.is_pressed('a'): # Sinon, si 'a' est appuyée, direction gauche
+        new_pan_dir = -1
+    
+    # Si la direction désirée pour le pan a changé, on la met à jour
+    if new_pan_dir != current_pan_direction:
+        current_pan_direction = new_pan_dir
+    
+    # Exécute le mouvement du pan si une direction est active 
+    if current_pan_direction != 0:
+        pan_servo.move_increment(current_pan_direction)
+
+
+    new_tilt_dir = 0 
+    if keyboard.is_pressed('w'): # Si 'w' est appuyée, direction haut
+        new_tilt_dir = 1
+    elif keyboard.is_pressed('s'): # Sinon, si 's' est appuyée, direction bas
+        new_tilt_dir = -1
+    
+    # Si la direction désirée pour le tilt a changé, on la met à jour
+    if new_tilt_dir != current_tilt_direction:
+        current_tilt_direction = new_tilt_dir
+
+    # Exécute le mouvement du tilt si une direction est active 
+    if current_tilt_direction != 0:
+        tilt_servo.move_increment(current_tilt_direction)
+
+        
+    
+ 
+
 
 def start_servos_control():
     i2c = busio.I2C(SCL, SDA)

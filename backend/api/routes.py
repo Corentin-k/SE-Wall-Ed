@@ -45,7 +45,7 @@ def motor_speed_route():
     else:
         return jsonify({"error": "Speed not provided"}), 400
 
-
+# ---------------LED RGB---------------------------------------
 @robot_routes.route('/led/color', methods=['POST'])
 def set_led_color_route():
     data = request.get_json() or {}
@@ -57,3 +57,20 @@ def set_led_color_route():
         return jsonify({"message": f"LED color set to {color_hex}"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# ---------------Servo Motors---------------------------------------
+@robot_routes.route('/servo/start', methods=['POST'])
+def servo_start_route():
+    data = request.get_json() or {}
+    try:
+        pan, tilt = map(int, data['direction'].split(","))
+    except Exception:
+        return jsonify({"error": "Invalid format"}), 400
+    robot.start_head(pan, tilt)
+    return jsonify({"message": "Servo head START"})
+
+
+@robot_routes.route('/servo/stop', methods=['POST'])
+def servo_stop_route():
+    robot.stop_head()
+    return jsonify({"message": "Servo head STOP"}), 200
