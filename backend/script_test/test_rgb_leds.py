@@ -1,5 +1,4 @@
-﻿
-from sensors.rgb_leds import RGBLEDs
+﻿from sensors.rgb_leds import RGBLEDs
 import keyboard  
 import time
 from robot.config import Left_R, Left_G, Left_B, Right_R, Right_G, Right_B
