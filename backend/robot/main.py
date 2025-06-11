@@ -1,32 +1,22 @@
-﻿# robot/main.py
-import logging
-import sys
-import os
-import busio
-
-from adafruit_pca9685 import PCA9685
-from board import SCL, SDA
-import threading
+﻿import threading
 import time
-import busio
-
+import logging
 from sensors import *
-
 from robot.config import *
 
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 logger = logging.getLogger(__name__)
 
 class Robot:
     def __init__(self):
-        self.motor = Motor()
+
         self.camera = Camera()
+
         self.leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
         self.leds.setup()
 
         self.init_servo_head()
+        self.init_movement()
 
         self._head_thread = None
         self._head_running = False
@@ -35,16 +25,17 @@ class Robot:
         logger.info("Robot initialized")
 
     def init_servo_head(self):
-        i2c = busio.I2C(SCL, SDA)
-        pca = PCA9685(i2c, address=0x5f) 
-        pca.frequency = 50 
-
-        PAN_CHANNEL = 1  
-        TILT_CHANNEL = 2 
         
-        self.pan_servo = ServoMotors(pca, channel=PAN_CHANNEL, initial_angle=90, step_size=2)
-        self.tilt_servo = ServoMotors(pca, channel=TILT_CHANNEL, initial_angle=90, step_size=2)
+        self.pan_servo = ServoMotors( channel=PAN_CHANNEL, initial_angle=90, step_size=2)
+        self.tilt_servo = ServoMotors( channel=TILT_CHANNEL, initial_angle=90, step_size=2)
     
+    def init_movement(self):
+        """
+        Initialise les moteurs pour le mouvement du robot.
+        """
+        self.motor = Motor()
+        self.motor_servomotor = ServoMotors(channel=MOTOR_CHANNEL, initial_angle=90, step_size=2)
+
     def move_forward(self, speed):
         logger.info("Robot moving forward at speed %d", speed)
         self.motor.set_speed(speed)
@@ -72,7 +63,7 @@ class Robot:
     def get_camera_frame(self):
         return self.camera.get_frame()
         
-    def movehead(self, pan, tilt):
+    def move_head(self, pan, tilt):
         """
         Déplace la tête du robot en ajustant les servos de panoramique et d'inclinaison.
         :param pan: 1 pour tourner à droite, -1 pour tourner à gauche
@@ -88,10 +79,10 @@ class Robot:
             with self._head_lock:
                 if not self._head_running:
                     break
-            self.movehead(pan, tilt)
+            self.move_head(pan, tilt)
             time.sleep(interval)
         # remise à 0/0 en sortie
-        self.movehead(0, 0)
+        self.move_head(0, 0)
 
     def start_head(self, pan: int, tilt: int):
         with self._head_lock:

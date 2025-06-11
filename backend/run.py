@@ -1,10 +1,16 @@
-﻿# run.py
+﻿
+import sys
+import os
+
 import logging
 import atexit
 import signal
-import sys
+
 from api import create_app
 from robot.main import Robot
+
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,

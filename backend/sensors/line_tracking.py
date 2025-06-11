@@ -41,3 +41,11 @@ class LineTracker:
 
         print(left, middle, right)
         time.sleep(0.1)
+
+if __name__ == "__main__":
+    tracker = LineTracker()
+    try:
+        while True:
+            tracker.trackLineProcessing()
+    except KeyboardInterrupt:
+        print("Arrêt du robot.")

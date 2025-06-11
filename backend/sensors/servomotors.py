@@ -6,12 +6,16 @@ from adafruit_pca9685 import PCA9685
 import keyboard 
 
 class ServoMotors:
-    def __init__(self, pca_controller, channel, min_pulse=500, max_pulse=2400, actuation_range=180, initial_angle=90, step_size=2):
+    def __init__(self, channel, min_pulse=500, max_pulse=2400, actuation_range=180, initial_angle=90, step_size=2):
         """
         Initialise un objet ServoMotors pour contrôler un servo spécifique.
         Garde une trace de l'angle actuel et permet des mouvements par incréments.
         """
-        self.pca = pca_controller 
+        i2c = busio.I2C(SCL, SDA)
+        self.pca = PCA9685(i2c, address=0x5f) 
+        self.pca.frequency = 50 
+
+
         self.channel = channel
         self.servo = servo.Servo(self.pca.channels[channel], 
                                  min_pulse=min_pulse, 
@@ -111,8 +115,8 @@ def start_servos_control():
     PAN_CHANNEL = 1  
     TILT_CHANNEL = 2 
     
-    pan_servo = ServoMotors(pca, channel=PAN_CHANNEL, initial_angle=90, step_size=2)
-    tilt_servo = ServoMotors(pca, channel=TILT_CHANNEL, initial_angle=90, step_size=2)
+    pan_servo = ServoMotors(channel=PAN_CHANNEL, initial_angle=90, step_size=2)
+    tilt_servo = ServoMotors(channel=TILT_CHANNEL, initial_angle=90, step_size=2)
 
     # Variables d'état pour suivre la direction de mouvement actuelle de chaque servo
     # 0 = arrêté, 1 = direction positive, -1 = direction négative
