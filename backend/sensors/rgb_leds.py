@@ -1,15 +1,15 @@
 import RPi.GPIO as GPIO
 from gpiozero import PWMOutputDevice as PWM
-
-import keyboard  
+import curses
 import time
 from robot.config import Left_R, Left_G, Left_B, Right_R, Right_G, Right_B
+
 
 def map_value(x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
-def hex_to_rgb(hex_value: str) -> tuple[int,int,int]:
 
+def hex_to_rgb(hex_value: str) -> tuple[int,int,int]:
     hex_value = hex_value.lstrip('#')
     if len(hex_value) == 3:
         hex_value = ''.join(c*2 for c in hex_value)
@@ -33,7 +33,6 @@ class RGBLEDs:
         self.R_R = None
         self.R_G = None
         self.R_B = None
-        
 
     def setup(self):
         self.L_R = PWM(pin=self.Left_R, initial_value=1.0, frequency=2000)
@@ -42,30 +41,19 @@ class RGBLEDs:
         self.R_R = PWM(pin=self.Right_R, initial_value=1.0, frequency=2000)
         self.R_G = PWM(pin=self.Right_G, initial_value=1.0, frequency=2000)
         self.R_B = PWM(pin=self.Right_B, initial_value=1.0, frequency=2000)
-    
+
     def highled(self, led):
-        self.L_R.value = 1.0
-        self.L_G.value = 1.0
-        self.L_B.value = 1.0
-        self.R_R.value = 1.0
-        self.R_G.value = 1.0
-        self.R_B.value = 1.0
-        
-        if led == 'L_R':
-            self.L_R.value = 0
-        elif led == 'L_G':
-            self.L_G.value = 0
-        elif led == 'L_B':
-            self.L_B.value = 0
-        elif led == 'R_R':
-            self.R_R.value = 0
-        elif led == 'R_G':
-            self.R_G.value = 0
-        elif led == 'R_B':
-            self.R_B.value = 0
+        # Éteint toutes
+        self.clear_all()
+        # Allume la LED demandée
+        if led == 'L_R': self.L_R.value = 0
+        elif led == 'L_G': self.L_G.value = 0
+        elif led == 'L_B': self.L_B.value = 0
+        elif led == 'R_R': self.R_R.value = 0
+        elif led == 'R_G': self.R_G.value = 0
+        elif led == 'R_B': self.R_B.value = 0
 
     def setAllColor(self, col):
-        """col: int, couleur hex ex: 0x112233"""
         R_val = (col & 0xff0000) >> 16
         G_val = (col & 0x00ff00) >> 8
         B_val = (col & 0x0000ff)
@@ -90,10 +78,10 @@ class RGBLEDs:
         self.R_G.value = 1.0 - G_val
         self.R_B.value = 1.0 - B_val
 
-    
     def set_color_hex(self, hex_value: str):
         r, g, b = hex_to_rgb(hex_value)
         self.setAllRGBColor(r, g, b)
+
     def clear_all(self):
         self.L_R.value = 1.0
         self.L_G.value = 1.0
@@ -109,6 +97,8 @@ class RGBLEDs:
         self.R_R.close()
         self.R_G.close()
         self.R_B.close()
+
+
 MAPPING = {
     'r': 'L_R',
     'g': 'L_G',
@@ -117,40 +107,53 @@ MAPPING = {
     'v': 'R_G',
     'n': 'R_B',
 }
+
 colors = [0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0xFF00FF, 0x00FFFF, 0x6F00D2, 0xFF5809]
+
 
 def start_colors():
     leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
     leds.setup()
     pressed = set()
 
-    def on_down(e):
-        if e.name in MAPPING:
-            pressed.add(e.name)
+    # Initialisation de l'écran curses
+    stdscr = curses.initscr()
+    curses.noecho()
+    curses.cbreak()
+    stdscr.nodelay(True)
+    stdscr.keypad(True)
 
-    def on_up(e):
-        if e.name in MAPPING:
-            pressed.discard(e.name)
-
-    keyboard.on_press(on_down)
-    keyboard.on_release(on_up)
-
-    print("Maintenez r/g/b/u/v/n pour allumer, relâchez pour éteindre, q pour quitter.")
     try:
+        stdscr.addstr(0, 0, "Maintenez r/g/b/u/v/n pour allumer, relâchez pour éteindre, q pour quitter.")
+        stdscr.refresh()
         while True:
-            if keyboard.is_pressed('q'):
-                break
-            leds.clear_all()
-
-            for key in pressed:
+            ch = stdscr.getch()
+            if ch != curses.ERR:
+                try:
+                    key = chr(ch)
+                except ValueError:
+                    continue
+                if key == 'q':
+                    break
                 if key in MAPPING:
-                    leds.highled(MAPPING[key])  
+                    pressed.add(key)
+            # Réinitialise puis applique l'état des touches
+            leds.clear_all()
+            for key in list(pressed):
+                leds.highled(MAPPING[key])
             time.sleep(0.05)
     finally:
+        # Restaure le terminal
+        curses.nocbreak()
+        stdscr.keypad(False)
+        curses.echo()
+        curses.endwin()
         leds.destroy()
-        keyboard.unhook_all()
+
+
 def color_loop():
     leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
+    leds.setup()
     try:
         while True:
             for col in colors:
@@ -161,11 +164,14 @@ def color_loop():
     finally:
         leds.destroy()
 
+
 def test_hex_colors():
     leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
+    leds.setup()
     leds.set_color_hex("#FF8800")
     time.sleep(2)
     leds.destroy()
+
 
 if __name__ == "__main__":
     start_colors()
