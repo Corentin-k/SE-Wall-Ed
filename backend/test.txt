@@ -1,0 +1,1052 @@
+﻿from flask import Blueprint, request, jsonify, Response
+
+
+
+robot_routes = Blueprint('robot_routes', __name__)
+robot = None
+
+def set_robot_instance(r):
+    global robot
+    robot = r
+    
+@robot_routes.route('/motor/stop', methods=['POST'])
+def motor_stop_route():
+    robot.stop()
+    return jsonify({"message": "Motor stopped"})
+
+@robot_routes.route('/motor/move', methods=['POST'])
+def motor_move_route():
+    data = request.get_json() or {}
+    direction = data.get("direction")
+    speed = data.get("speed", 50)  # valeur par défaut
+
+    if direction == "forward":
+        robot.move_forward(speed)
+        return jsonify({"message": f"Robot moving forward at speed {speed}"})
+    elif direction == "backward":
+        robot.move_backward(speed)
+        return jsonify({"message": f"Robot moving backward at speed {speed}"})
+    elif direction == "left":
+        robot.turn_left(speed)
+        return jsonify({"message": f"Robot turning left at speed {speed}"})
+    elif direction == "right":
+        robot.turn_right(speed)
+        return jsonify({"message": f"Robot turning right at speed {speed}"})
+    else:
+        return jsonify({"error": f"Invalid direction '{direction}'"}), 400
+
+
+@robot_routes.route('/motor/speed', methods=['POST'])
+def motor_speed_route():
+    data = request.get_json()
+    speed = data.get("speed")
+    if speed is not None:
+        robot.motor.set_speed(speed)
+        return jsonify({"message": f"Motor speed set to {speed}"})
+    else:
+        return jsonify({"error": "Speed not provided"}), 400
+
+# ---------------LED RGB---------------------------------------
+@robot_routes.route('/led/color', methods=['POST'])
+def set_led_color_route():
+    data = request.get_json() or {}
+    color_hex = data.get("color")
+    if not color_hex:
+        return jsonify({"error": "No color provided"}), 400
+    try:
+        robot.led(color_hex)
+        return jsonify({"message": f"LED color set to {color_hex}"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------------Camera Streaming---------------------------------------
+@robot_routes.route('/camera')
+def video_feed():
+    """Videostreamingroute.Putthisinthesrcattributeofanimgtag."""
+    return Response(gen(),
+        mimetype='multipart/x-mixed-replace;boundary=frame')
+
+def gen():
+    """Fonction génératrice de flux vidéo."""
+    while True:
+        frame = robot.get_camera_frame()
+        yield(b'--frame\r\n'
+              b'Content-Type:image/jpeg\r\n\r\n'+frame+b'\r\n')
+# ---------------Servo Motors---------------------------------------
+@robot_routes.route('/servo/start', methods=['POST'])
+def servo_start_route():
+    data = request.get_json() or {}
+    # Expect 'pan' and 'tilt' directly as integers from the frontend
+    pan = data.get('pan', 0)
+    tilt = data.get('tilt', 0)
+
+    try:
+        # Ensure they are integers, although the frontend should send them as such
+        pan = int(pan)
+        tilt = int(tilt)
+    except ValueError:
+        return jsonify({"error": "Invalid pan or tilt value. Must be integer."}), 400
+    
+    # Call robot.start_head with the combined pan and tilt values
+    # This will handle stopping any existing head movement thread and starting a new one
+    # with the combined directions, enabling simultaneous control.
+    robot.start_head(pan, tilt)
+    return jsonify({"message": f"Servo head movement started: pan={pan}, tilt={tilt}"})
+
+@robot_routes.route('/servo/stop', methods=['POST'])
+def servo_stop_route():
+    robot.stop_head()
+    return jsonify({"message": "Servo head STOP"}), 200
+﻿from flask import Flask
+from flask_cors import CORS
+from .routes import robot_routes , set_robot_instance
+from flasgger import Swagger
+
+def create_app(robot=None):
+    
+    app = Flask(__name__)
+    # Pendant le dev, on ouvre tout
+    CORS(app)
+    set_robot_instance(robot)
+    # Enregistrement de tes routes
+    app.register_blueprint(robot_routes)
+    Swagger(app, template={
+    "swagger": "2.0",
+    "info": {
+        "title": "Robot Motor API",
+        "description": "API for controlling the robot's motors",
+        "version": "1.0.0"
+    }
+})
+
+    return app
+
+#pip freeze > requirements.txt
+ament-cpplint==0.17.2
+ament-index-python==1.8.1
+ament-lint==0.17.2
+ament-lint-cmake==0.17.2
+ament-uncrustify==0.17.2
+ament-xmllint==0.17.2
+attrs==25.3.0
+blinker==1.9.0
+click==8.2.1
+domain-coordinator==0.12.0
+flasgger==0.9.7.1
+Flask==3.1.1
+flask-cors==6.0.0
+itsdangerous==2.2.0
+Jinja2==3.1.6
+jsonschema==4.24.0
+jsonschema-specifications==2025.4.1
+MarkupSafe==3.0.2
+mistune==3.1.3
+packaging==25.0
+PyYAML==6.0.2
+rcutils==6.7.2
+referencing==0.36.2
+resource-retriever==3.4.4
+rpds-py==0.25.1
+rpyutils==0.4.1
+six==1.17.0
+typing_extensions==4.14.0
+Werkzeug==3.1.3
+﻿# robot/config.py
+
+# GPIO pins
+
+# Led 
+LED1 = 9
+LED2 = 25
+LED3 = 11
+
+
+# Led RGB à l'avant du robot
+Left_R = 13
+Left_G = 19
+Left_B = 0
+Right_R = 1
+Right_G = 5
+Right_B = 6
+
+#Servo motors for head movement
+PAN_CHANNEL = 1  
+TILT_CHANNEL = 2 
+
+# Servo motor for motor:
+MOTOR_CHANNEL = 0
+
+# Motor pins
+MOTOR_M1_IN1 =  15      #Define the positive pole of M1
+MOTOR_M1_IN2 =  14      #Define the negative pole of M1
+MOTOR_M2_IN1 =  12      #Define the positive pole of M2
+MOTOR_M2_IN2 =  13      #Define the negative pole of M2
+MOTOR_M3_IN1 =  11      #Define the positive pole of M3
+MOTOR_M3_IN2 =  10      #Define the negative pole of M3
+MOTOR_M4_IN1 =  8       #Define the positive pole of M4
+MOTOR_M4_IN2 =  9       #Define the negative pole of M4﻿from sensors.motor2 import Motor
+
+from robot.config import *
+
+
+# Instance globale du moteur
+motor = Motor()
+
+
+def set_motor_speed(speed):
+    motor.set_speed(speed)
+    return f"Speed set to {speed}"
+
+def stop_motor():
+    motor.stop()
+    return "Motor stopped"
+
+
+
+    
+﻿import threading
+import time
+import logging
+from sensors import *
+from robot.config import *
+
+
+logger = logging.getLogger(__name__)
+
+class Robot:
+    def __init__(self):
+
+        self.camera = Camera()
+
+        self.leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
+        self.leds.setup()
+
+        self.init_servo_head()
+        self.init_movement()
+
+        self._head_thread = None
+        self._head_running = False
+        self._head_lock = threading.Lock()
+
+        logger.info("Robot initialized")
+
+    def init_servo_head(self):
+        
+        self.pan_servo = ServoMotors( channel=PAN_CHANNEL, initial_angle=90, step_size=2)
+        self.tilt_servo = ServoMotors( channel=TILT_CHANNEL, initial_angle=90, step_size=2)
+    
+    def init_movement(self):
+        """
+        Initialise les moteurs pour le mouvement du robot.
+        """
+        self.motor = Motor()
+        self.motor_servomotor = ServoMotors(channel=MOTOR_CHANNEL, initial_angle=90, step_size=2)
+
+    def move_forward(self, speed):
+        logger.info("Robot moving forward at speed %d", speed)
+        self.motor.set_speed(speed)
+
+    def move_backward(self, speed):
+        logger.info("Robot moving backward at speed %d", speed)
+        self.motor.set_speed(-speed)
+
+    def turn_left(self, speed):
+        logger.info("Robot turning left")
+        # Implémentation réelle dépend du matériel
+        self.motor.move("left")
+
+    def turn_right(self, speed):
+        logger.info("Robot turning right")
+        # Implémentation réelle dépend du matériel
+        self.motor.move("right")
+
+    def stop(self):
+        logger.info("Robot stopping")
+        self.motor.stop()
+    def led(self,hex):
+         self.leds.set_color_hex(hex)
+
+    def get_camera_frame(self):
+        return self.camera.get_frame()
+        
+    def move_head(self, pan, tilt):
+        """
+        Déplace la tête du robot en ajustant les servos de panoramique et d'inclinaison.
+        :param pan: 1 pour tourner à droite, -1 pour tourner à gauche
+        :param tilt: 1 pour monter, -1 pour descendre
+        """
+        if pan != 0:
+            self.pan_servo.move_increment(pan)
+        if tilt != 0:
+            self.tilt_servo.move_increment(tilt)
+            
+    def _head_loop(self, pan: int, tilt: int, interval: float = 0.05):
+        while True:
+            with self._head_lock:
+                if not self._head_running:
+                    break
+            self.move_head(pan, tilt)
+            time.sleep(interval)
+        # remise à 0/0 en sortie
+        self.move_head(0, 0)
+
+    def start_head(self, pan: int, tilt: int):
+        with self._head_lock:
+            # si déjà en cours, on coupe l’ancienne boucle
+            if self._head_running:
+                self._head_running = False
+                if self._head_thread:
+                    self._head_thread.join()
+            # on lance la nouvelle
+            self._head_running = True
+            self._head_thread = threading.Thread(
+                target=self._head_loop, args=(pan, tilt), daemon=True
+            )
+            self._head_thread.start()
+
+    def stop_head(self):
+        with self._head_lock:
+            self._head_running = False
+        if self._head_thread:
+            self._head_thread.join()
+
+# main
+﻿
+import sys
+import os
+
+import logging
+import atexit
+import signal
+
+from api import create_app
+from robot.main import Robot
+
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO,
+                        format="%(levelname)s: %(message)s")
+
+    robot = Robot()
+    app = create_app(robot)
+
+    # on enregistre la destruction pour la fin de vie du process
+    def cleanup_and_exit(*args):
+        robot.leds.destroy()
+        robot.camera.destroy()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, cleanup_and_exit)
+    signal.signal(signal.SIGTERM, cleanup_and_exit)
+    atexit.register(lambda: robot.leds.destroy())
+
+    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False, threaded=True)
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from sensors.line_tracking import LineTracker
+
+
+if __name__ == "__main__":
+    tracker = LineTracker()
+    try:
+        while True:
+            tracker.trackLineProcessing()
+    except KeyboardInterrupt:
+        print("Arrêt du robot.")from gpiozero import TonalBuzzer
+from time import sleep
+
+class Buzzer:
+    def __init__(self, pin=18):
+        self.buzzer = TonalBuzzer(pin)
+
+    def play_tune(self, tune):
+        for note, duration in tune:
+            print(note if note else "Pause")
+            self.buzzer.play(note)
+            sleep(float(duration))
+        self.buzzer.stop()
+
+    def stop(self):
+        self.buzzer.stop()
+
+
+# Définition de la mélodie
+SONG = [
+    
+]
+
+
+Police = [
+   
+]
+
+melody_DOOM = [
+    
+]
+
+
+
+
+
+# Exemple d'utilisation
+if __name__ == "__main__":
+    buzzer = Buzzer()
+    try:
+        buzzer.play_tune(Police)
+    except KeyboardInterrupt:
+        buzzer.stop()
+        print("Arrêt du buzzer.")
+﻿import time
+import io
+import threading
+from picamera2 import Picamera2, Preview
+try:
+    from greenlet import getcurrent as get_ident
+except ImportError:
+    try:
+        from thread import get_ident
+    except ImportError:
+        from _thread import get_ident
+
+class Camera:
+    thread = None  # background thread that reads frames from camera
+    frame = None  # current frame is stored here by background thread
+    last_access = 0  # time of last client access to the camera
+    slow = False  # flag to slow down the camera thread if no clients are connected
+    # event = CameraEvent()
+    _stop_event = threading.Event()
+
+    def __init__(self):
+        """Start the background camera thread if it isn't running yet."""
+        if Camera.thread is None:
+            Camera.last_access = time.time()
+
+            # start background frame thread
+            Camera.thread = threading.Thread(target=self._thread)
+            Camera.thread.start()
+
+            # wait until first frame is available
+            # Camera.event.wait()
+
+    def get_frame(self):
+        """Return the current camera frame."""
+        Camera.last_access = time.time()
+        Camera.slow = False
+
+        # wait for a signal from the camera thread
+        # Camera.event.wait()
+        # Camera.event.clear()
+
+        return Camera.frame
+
+    @staticmethod
+    def frames():
+        with Picamera2() as camera:
+            camera.start()
+
+            # let camera warm up
+            time.sleep(2) 
+
+            stream = io.BytesIO()
+            try:
+                while True:
+                    camera.capture_file(stream, format='jpeg')
+                    stream.seek(0)
+                    yield stream.read()
+
+                    # reset stream for next frame
+                    stream.seek(0)
+                    stream.truncate()
+            finally:
+                camera.stop()
+
+    @classmethod
+    def _thread(cls):
+        """Camera background thread."""
+        print('Starting camera thread.')
+        frames_iterator = cls.frames()
+        try:
+            for frame in frames_iterator:
+                if cls._stop_event.is_set():
+                    print('Camera destroy requested, stopping thread.')
+                    break
+                Camera.frame = frame
+                # Camera.event.set()  # send signal to clients
+                time.sleep(0)
+
+                # if there hasn't been any clients asking for frames in
+                # the last 10 seconds then stop the thread
+                if time.time() - Camera.last_access > 10 and not Camera.slow:
+                    Camera.slow = True
+                    print('Slowing down camera thread due to inactivity.')
+
+                # if no clients are connected, slow down the thread
+                if Camera.slow:
+                    time.sleep(1)
+        finally:
+            print('Camera thread stopped.')
+            frames_iterator.close()
+            Camera.thread = None
+            Camera.frame = None
+            # Camera.event.set()  # signal that thread has stopped
+            
+    def destroy(self):
+        """Arrête proprement le thread caméra et libère les ressources."""
+        Camera._stop_event.set()
+        if Camera.thread is not None:
+            Camera.thread.join(timeout=2)
+        Camera.thread = None
+        Camera.frame = None
+        Camera.last_access = 0
+        Camera.slow = False
+        Camera._stop_event.clear()
+
+
+    
+ 
+
+ 
+ 
+ 
+﻿class LightTracker:
+    def __init__(self):
+        pass
+ 
+
+ 
+ 
+
+ 
+ 
+ 
+﻿from gpiozero import InputDevice
+import time
+
+class LineTracker:
+    def __init__(self, pin_left=22, pin_middle=27, pin_right=17):
+        
+        self.sensor_left = InputDevice(pin=pin_left)
+        self.sensor_middle = InputDevice(pin=pin_middle)
+        self.sensor_right = InputDevice(pin=pin_right)
+
+    def read_sensors(self):
+        
+        return {
+            'left': self.sensor_left.value,
+            'middle': self.sensor_middle.value,
+            'right': self.sensor_right.value
+        }
+
+    def print_status(self):
+        
+        status = self.read_sensors()
+        print("left: {left}   middle: {middle}   right: {right}".format(**status))
+    
+    def trackLineProcessing(self):
+        status = self.read_sensors()
+        left = status['left']
+        middle = status['middle']
+        right = status['right']
+
+        # if middle == 0:
+        #     scGear.moveAngle(0, 0)
+        #     move.move(80, 1, "mid")
+        # elif left == 0:
+        #     scGear.moveAngle(0, 30)
+        #     move.move(80, 1, "left")
+        # elif right == 0:
+        #     scGear.moveAngle(0, -30)
+        #     move.move(80, 1, "right")
+        # else:
+        #     move.move(0, 1, "no")
+
+        print(left, middle, right)
+        time.sleep(0.1)import logging
+import time
+from board import SCL, SDA
+import busio
+from adafruit_pca9685 import PCA9685
+from adafruit_motor import motor
+import asyncio
+
+MOTOR_M1_IN1 =  15      #Define the positive pole of M1
+MOTOR_M1_IN2 =  14      #Define the negative pole of M1
+MOTOR_M2_IN1 =  12      #Define the positive pole of M2
+MOTOR_M2_IN2 =  13      #Define the negative pole of M2
+MOTOR_M3_IN1 =  11      #Define the positive pole of M3
+MOTOR_M3_IN2 =  10      #Define the negative pole of M3
+MOTOR_M4_IN1 =  8       #Define the positive pole of M4
+MOTOR_M4_IN2 =  9       #Define the negative pole of M4
+
+logger = logging.getLogger(__name__)
+
+def map_range(x,in_min,in_max,out_min,out_max):
+  return (x - in_min)/(in_max - in_min) *(out_max - out_min) +out_min
+
+
+class Motors:
+    def __init__(self):
+        i2c = busio.I2C(SCL, SDA)
+        # Create a simple PCA9685 class instance.
+        #  pwm_motor.channels[7].duty_cycle = 0xFFFF
+        pwm_motor = PCA9685(i2c, address=0x5f) #default 0x40
+        pwm_motor.frequency = 50
+
+        self.motor1 = motor.DCMotor(pwm_motor.channels[MOTOR_M1_IN1],pwm_motor.channels[MOTOR_M1_IN2] )
+        self.motor1.decay_mode = (motor.SLOW_DECAY)
+        self.motor1.throttle = 0
+        self.motor2 = motor.DCMotor(pwm_motor.channels[MOTOR_M2_IN1],pwm_motor.channels[MOTOR_M2_IN2] )
+        self.motor2.decay_mode = (motor.SLOW_DECAY)
+        self.motor2.throttle = 0
+        self.motor3 = motor.DCMotor(pwm_motor.channels[MOTOR_M3_IN1],pwm_motor.channels[MOTOR_M3_IN2] )
+        self.motor3.decay_mode = (motor.SLOW_DECAY)
+        self.motor3.throttle = 0
+        self.motor4 = motor.DCMotor(pwm_motor.channels[MOTOR_M4_IN1],pwm_motor.channels[MOTOR_M4_IN2] )
+        self.motor4.decay_mode = (motor.SLOW_DECAY)
+        self.motor4.throttle = 0
+
+        self.smooth_motor_task = None
+
+    def set_motor_speed(self, channel, motor_speed, forward = True):
+        if motor_speed > 100:
+            motor_speed = 100
+        elif motor_speed < 0:
+            motor_speed = 0
+        speed = map_range(motor_speed, 0, 100, 0, 1.0)
+        if not forward:
+            speed = -speed
+
+        if channel == 1:
+            self.motor1.throttle = speed
+        elif channel == 2:
+            self.motor2.throttle = speed
+        elif channel == 3:
+            self.motor3.throttle = speed
+        elif channel == 4:
+            self.motor4.throttle = speed
+            
+    def coast_motor(self, channel):
+        if channel == 1:
+            self.motor1.decay_mode = (motor.FAST_DECAY)
+        elif channel == 2:
+            self.motor2.decay_mode = (motor.FAST_DECAY)
+        elif channel == 3:
+            self.motor3.decay_mode = (motor.FAST_DECAY)
+        elif channel == 4:
+            self.motor4.decay_mode = (motor.FAST_DECAY)
+
+    def uncoast_motor(self, channel):
+        if channel == 1:
+            self.motor1.decay_mode = (motor.SLOW_DECAY)
+        elif channel == 2:
+            self.motor2.decay_mode = (motor.SLOW_DECAY)
+        elif channel == 3:
+            self.motor3.decay_mode = (motor.SLOW_DECAY)
+        elif channel == 4:
+            self.motor4.decay_mode = (motor.SLOW_DECAY)
+    def uncoast(self):
+        self.uncoast_motor(1)
+
+    def coast(self):
+        self.coast_motor(1)
+        
+    def set_speed(self, speed: int, forward = True):
+        self.set_motor_speed(1, speed, forward)
+
+    smooth_step_count = 20 # how many time do we actualise the speed during acceleration
+
+    async def __smooth_speed__(self, target_speed, forward = True, acceleration_rate = 1):
+        while True:
+            current_speed = map_range(self.motor1.throttle, -1, 1, -100, 100)
+            speed_diff = target_speed - current_speed
+            max_diff = acceleration_rate / self.smooth_step_count
+            if speed_diff > 0 :
+                speed_diff = min(max_diff, speed_diff)
+            else:
+                speed_diff = max(-max_diff, speed_diff)
+
+            next_target_speed = current_speed + speed_diff
+
+            self.set_speed(abs(next_target_speed), next_target_speed > 0)
+            if target_speed == current_speed:
+                break
+            await asyncio.sleep(1 / self.smooth_step_count)
+
+
+    def smooth_speed(self, target_speed, forward = True, acceleration = 50):
+        if(self.smooth_motor_task != None):
+            self.smooth_motor_task.cancel()
+        self.smooth_motor_task = asyncio.create_task(self.__smooth_speed__(target_speed, forward, acceleration))
+        return self.smooth_motor_task
+
+
+
+async def main():
+    motors = Motors()
+    try:
+        for i in range(10, 25):
+            print("testing speed : ", i * 10)
+            await motors.smooth_speed(100, True, i * 10)
+            await asyncio.sleep(0.1)
+            await motors.smooth_speed(-100, True, i * 10)
+            await asyncio.sleep(0.1)
+        await motors.smooth_speed(0)
+    except asyncio.CancelledError:
+        motors.set_speed(0)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+import RPi.GPIO as GPIO
+from gpiozero import PWMOutputDevice as PWM
+import curses
+import time
+from robot.config import Left_R, Left_G, Left_B, Right_R, Right_G, Right_B
+
+def map_value(x, in_min, in_max, out_min, out_max):
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
+def hex_to_rgb(hex_value: str) -> tuple[int, int, int]:
+    hex_value = hex_value.lstrip('#')
+    if len(hex_value) == 3:
+        hex_value = ''.join(c * 2 for c in hex_value)
+    r = int(hex_value[0:2], 16)
+    g = int(hex_value[2:4], 16)
+    b = int(hex_value[4:6], 16)
+    return (r, g, b)
+
+class RGBLEDs:
+    def __init__(self, left_r, left_g, left_b, right_r, right_g, right_b):
+        self.Left_R = left_r
+        self.Left_G = left_g
+        self.Left_B = left_b
+        self.Right_R = right_r
+        self.Right_G = right_g
+        self.Right_B = right_b
+
+    def setup(self):
+        self.L_R = PWM(pin=self.Left_R, initial_value=1.0, frequency=2000)
+        self.L_G = PWM(pin=self.Left_G, initial_value=1.0, frequency=2000)
+        self.L_B = PWM(pin=self.Left_B, initial_value=1.0, frequency=2000)
+        self.R_R = PWM(pin=self.Right_R, initial_value=1.0, frequency=2000)
+        self.R_G = PWM(pin=self.Right_G, initial_value=1.0, frequency=2000)
+        self.R_B = PWM(pin=self.Right_B, initial_value=1.0, frequency=2000)
+
+    def highled(self, leds):
+        if not leds:
+            return
+        for led in leds:
+            if led == 'L_R': self.L_R.value = 0
+            elif led == 'L_G': self.L_G.value = 0
+            elif led == 'L_B': self.L_B.value = 0
+            elif led == 'R_R': self.R_R.value = 0
+            elif led == 'R_G': self.R_G.value = 0
+            elif led == 'R_B': self.R_B.value = 0
+
+    def setAllColor(self, col):
+        R_val = (col & 0xff0000) >> 16
+        G_val = (col & 0x00ff00) >> 8
+        B_val = (col & 0x0000ff)
+        R_val = map_value(R_val, 0, 255, 0, 1.00)
+        G_val = map_value(G_val, 0, 255, 0, 1.00)
+        B_val = map_value(B_val, 0, 255, 0, 1.00)
+        self.L_R.value = 1.0 - R_val
+        self.L_G.value = 1.0 - G_val
+        self.L_B.value = 1.0 - B_val
+        self.R_R.value = 1.0 - R_val
+        self.R_G.value = 1.0 - G_val
+        self.R_B.value = 1.0 - B_val
+
+    def setAllRGBColor(self, R, G, B):
+        R_val = map_value(R, 0, 255, 0, 1.00)
+        G_val = map_value(G, 0, 255, 0, 1.00)
+        B_val = map_value(B, 0, 255, 0, 1.00)
+        self.L_R.value = 1.0 - R_val
+        self.L_G.value = 1.0 - G_val
+        self.L_B.value = 1.0 - B_val
+        self.R_R.value = 1.0 - R_val
+        self.R_G.value = 1.0 - G_val
+        self.R_B.value = 1.0 - B_val
+
+    def set_color_hex(self, hex_value: str):
+        r, g, b = hex_to_rgb(hex_value)
+        self.setAllRGBColor(r, g, b)
+
+    def clear_all(self):
+        self.L_R.value = 1.0
+        self.L_G.value = 1.0
+        self.L_B.value = 1.0
+        self.R_R.value = 1.0
+        self.R_G.value = 1.0
+        self.R_B.value = 1.0
+
+    def destroy(self):
+        self.L_R.close()
+        self.L_G.close()
+        self.L_B.close()
+        self.R_R.close()
+        self.R_G.close()
+        self.R_B.close()
+
+MAPPING = {
+    ord('r'): 'L_R',
+    ord('g'): 'L_G',
+    ord('b'): 'L_B',
+    ord('u'): 'R_R',
+    ord('v'): 'R_G',
+    ord('n'): 'R_B',
+}
+
+colors = [0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0xFF00FF, 0x00FFFF, 0x6F00D2, 0xFF5809]
+
+def start_colors():
+    leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
+    leds.setup()
+
+    stdscr = curses.initscr()
+    curses.noecho()
+    curses.cbreak()
+    stdscr.nodelay(True)
+
+    try:
+        stdscr.addstr(0, 0, "Appuyez sur r/g/b/u/v/n pour allumer une ou plusieurs LEDs, q pour quitter.")
+        stdscr.refresh()
+
+        pressed = set()
+
+        while True:
+            ch = stdscr.getch()
+            if ch != curses.ERR:
+                if ch == ord('q'):
+                    break
+                elif ch in MAPPING:
+                    pressed.add(ch)
+            else:
+                time.sleep(0.01)
+
+            leds.clear_all()
+            leds.highled([MAPPING[c] for c in pressed])
+
+    finally:
+        curses.nocbreak()
+        stdscr.keypad(False)
+        curses.echo()
+        curses.endwin()
+        leds.destroy()
+
+def color_loop():
+    leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
+    leds.setup()
+    try:
+        while True:
+            for col in colors:
+                leds.setAllColor(col)
+                time.sleep(0.5)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        leds.destroy()
+
+def test_hex_colors():
+    leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
+    leds.setup()
+    leds.set_color_hex("#FF8800")
+    time.sleep(2)
+    leds.destroy()
+
+if __name__ == "__main__":
+    start_colors()
+import time
+from board import SCL, SDA
+import busio
+from adafruit_motor import servo
+from adafruit_pca9685 import PCA9685
+import keyboard 
+
+class ServoMotors:
+    def __init__(self, channel, min_pulse=500, max_pulse=2400, actuation_range=180, initial_angle=90, step_size=2):
+        """
+        Initialise un objet ServoMotors pour contrôler un servo spécifique.
+        Garde une trace de l'angle actuel et permet des mouvements par incréments.
+        """
+        i2c = busio.I2C(SCL, SDA)
+        self.pca = PCA9685(i2c, address=0x5f) 
+        self.pca.frequency = 50 
+
+
+        self.channel = channel
+        self.servo = servo.Servo(self.pca.channels[channel], 
+                                 min_pulse=min_pulse, 
+                                 max_pulse=max_pulse,
+                                 actuation_range=actuation_range)
+        self.current_angle = initial_angle 
+        self.step_size = step_size         
+        self.set_angle(self.current_angle) 
+
+    def set_angle(self, angle):
+        """
+        Définit l'angle du servo, en s'assurant qu'il reste dans les limites de 0 à 180 degrés.
+        """
+        if angle < 0:
+            angle = 0
+        elif angle > 180:
+            angle = 180
+        self.current_angle = angle 
+        self.servo.angle = angle
+
+    def move_increment(self, direction):
+        """
+        Déplace le servo d'un incrément (step_size) dans la direction spécifiée.
+        direction: 1 pour augmenter l'angle, -1 pour diminuer l'angle.
+        """
+        new_angle = self.current_angle + (self.step_size * direction)
+        self.set_angle(new_angle) 
+    
+    def stop(self):
+        """
+        Arrête le servo en le remettant à une position centrale (90 degrés).
+        """
+        self.set_angle(90)
+
+
+    
+def start_servos_control():
+    i2c = busio.I2C(SCL, SDA)
+    pca = PCA9685(i2c, address=0x5f) 
+    pca.frequency = 50 
+
+    PAN_CHANNEL = 1  
+    TILT_CHANNEL = 2 
+    
+    pan_servo = ServoMotors(pca, channel=PAN_CHANNEL, initial_angle=90, step_size=2)
+    tilt_servo = ServoMotors(pca, channel=TILT_CHANNEL, initial_angle=90, step_size=2)
+
+    # Variables d'état pour suivre la direction de mouvement actuelle de chaque servo
+    # 0 = arrêté, 1 = direction positive, -1 = direction négative
+    current_pan_direction = 0
+    current_tilt_direction = 0
+
+    print("Contrôle des servos avec les touches A/D (Pan) et W/S (Tilt).")
+    print("Appuyez sur 'Esc' pour quitter le programme.")
+
+   
+            
+    new_pan_dir = 0 
+    if keyboard.is_pressed('d'): # Si 'd' est appuyée, direction droite
+        new_pan_dir = 1
+    elif keyboard.is_pressed('a'): # Sinon, si 'a' est appuyée, direction gauche
+        new_pan_dir = -1
+    
+    # Si la direction désirée pour le pan a changé, on la met à jour
+    if new_pan_dir != current_pan_direction:
+        current_pan_direction = new_pan_dir
+    
+    # Exécute le mouvement du pan si une direction est active 
+    if current_pan_direction != 0:
+        pan_servo.move_increment(current_pan_direction)
+
+
+    new_tilt_dir = 0 
+    if keyboard.is_pressed('w'): # Si 'w' est appuyée, direction haut
+        new_tilt_dir = 1
+    elif keyboard.is_pressed('s'): # Sinon, si 's' est appuyée, direction bas
+        new_tilt_dir = -1
+    
+    # Si la direction désirée pour le tilt a changé, on la met à jour
+    if new_tilt_dir != current_tilt_direction:
+        current_tilt_direction = new_tilt_dir
+
+    # Exécute le mouvement du tilt si une direction est active 
+    if current_tilt_direction != 0:
+        tilt_servo.move_increment(current_tilt_direction)
+
+        
+    
+ 
+
+
+def start_servos_control():
+    i2c = busio.I2C(SCL, SDA)
+    pca = PCA9685(i2c, address=0x5f) 
+    pca.frequency = 50 
+
+    PAN_CHANNEL = 1  
+    TILT_CHANNEL = 2 
+    
+    pan_servo = ServoMotors(channel=PAN_CHANNEL, initial_angle=90, step_size=2)
+    tilt_servo = ServoMotors(channel=TILT_CHANNEL, initial_angle=90, step_size=2)
+
+    # Variables d'état pour suivre la direction de mouvement actuelle de chaque servo
+    # 0 = arrêté, 1 = direction positive, -1 = direction négative
+    current_pan_direction = 0
+    current_tilt_direction = 0
+
+    print("Contrôle des servos avec les touches A/D (Pan) et W/S (Tilt).")
+    print("Appuyez sur 'Esc' pour quitter le programme.")
+
+    try:
+        while True:
+            # Vérifie si la touche 'Esc' est enfoncée pour quitter
+            if keyboard.is_pressed('esc'): 
+                break 
+            
+            new_pan_dir = 0 
+            if keyboard.is_pressed('d'): # Si 'd' est appuyée, direction droite
+                new_pan_dir = 1
+            elif keyboard.is_pressed('a'): # Sinon, si 'a' est appuyée, direction gauche
+                new_pan_dir = -1
+            
+            # Si la direction désirée pour le pan a changé, on la met à jour
+            if new_pan_dir != current_pan_direction:
+                current_pan_direction = new_pan_dir
+            
+            # Exécute le mouvement du pan si une direction est active 
+            if current_pan_direction != 0:
+                pan_servo.move_increment(current_pan_direction)
+
+
+            new_tilt_dir = 0 
+            if keyboard.is_pressed('w'): # Si 'w' est appuyée, direction haut
+                new_tilt_dir = 1
+            elif keyboard.is_pressed('s'): # Sinon, si 's' est appuyée, direction bas
+                new_tilt_dir = -1
+            
+            # Si la direction désirée pour le tilt a changé, on la met à jour
+            if new_tilt_dir != current_tilt_direction:
+                current_tilt_direction = new_tilt_dir
+
+            # Exécute le mouvement du tilt si une direction est active 
+            if current_tilt_direction != 0:
+                tilt_servo.move_increment(current_tilt_direction)
+
+            time.sleep(0.05) # Petite pause pour contrôler la vitesse et réduire l'utilisation CPU
+
+    except Exception as e:
+        print(f"Erreur : {e}")
+    
+    finally:
+        print("Arrêt des servos et nettoyage...")
+        pan_servo.stop()
+        tilt_servo.stop()
+        keyboard.unhook_all() # Décroche tous les écouteurs du clavier pour une sortie propre
+        print("Programme terminé.")
+
+if __name__ == "__main__":
+    start_servos_control()
+﻿from gpiozero import DistanceSensor
+from time import sleep
+
+class UltrasonicSensor:
+    def __init__(self, trigger_pin=23, echo_pin=24, max_distance=2):
+        self.sensor = DistanceSensor(trigger=trigger_pin, echo=echo_pin, max_distance=max_distance)
+
+    def get_distance_cm(self):
+        return round(self.sensor.distance * 100, 2)
+
+    def print_distance(self):
+        distance = self.get_distance_cm()
+        print(f"{distance:.2f} cm")
+
