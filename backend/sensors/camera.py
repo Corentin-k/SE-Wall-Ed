@@ -29,6 +29,10 @@ class Camera:
 
             # wait until first frame is available
             # Camera.event.wait()
+            
+            # wait until frames are available
+            while self.get_frame() is None:
+                time.sleep(0)
 
     def get_frame(self):
         """Return the current camera frame."""
