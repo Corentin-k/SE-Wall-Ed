@@ -4,6 +4,7 @@
     <div class="column">
       <Camera />
       <Lidar />
+      <ColorPicker />
     </div>
 
     <!-- Colonne 2 -->
@@ -28,7 +29,9 @@ import CommandHead from "../components/CommandHead.vue";
 import CommandMotor from "../components/CommandMotor.vue";
 import Lidar from "../components/Lidar.vue";
 import Settings from "../components/Settings.vue";
-import Mode from "../components/Mode.vue"; // Assurez-vous que le chemin est correct
+import Mode from "../components/Mode.vue";
+import ColorPicker from "../components/ColorPicker.vue";
+
 export default defineComponent({
   name: "Allcomponents",
   components: {
@@ -38,6 +41,7 @@ export default defineComponent({
     Lidar,
     Settings,
     Mode,
+    ColorPicker,
   },
 });
 </script>

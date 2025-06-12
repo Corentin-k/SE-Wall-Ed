@@ -1,6 +1,6 @@
 <template>
   <div class="color-picker">
-    <h2>LED Strip Control</h2>
+    <h2>LED Control</h2>
 
     <div class="color-display" :style="{ backgroundColor: displayColor }"></div>
 
