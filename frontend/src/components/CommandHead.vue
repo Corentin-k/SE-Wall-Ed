@@ -17,6 +17,19 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
+import { io } from "socket.io-client";
+
+const socket = io.connect('http://localhost:5000');
+
+// Handle connection errors
+socket.on('connect_error', (error) => {
+  console.error('Connection error:', error);
+});
+
+// Handle disconnection
+socket.on('disconnect', () => {
+  console.log('Disconnected from server');
+});
 
 const headKeys = ref(new Set<string>());
 
@@ -34,9 +47,11 @@ async function sendCombinedHeadCommand() {
 
   const url = "http://10.3.208.73:5000/servo";
   if (pan === 0 && tilt === 0) {
-    await axios.post(`${url}/stop`);
+    //await axios.post(`${url}/stop`);
+    socket.emit('stop_head');
   } else {
-    await axios.post(`${url}/start`, { pan, tilt });
+    //await axios.post(`${url}/start`, { pan, tilt });
+    socket.emit('move_head', { pan, tilt });
   }
 }
 

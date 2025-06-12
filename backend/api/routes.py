@@ -1,5 +1,6 @@
 ﻿from flask import Blueprint, request, jsonify, Response
-
+from flask_socketio import SocketIO, emit
+from . import socketio
 
 
 robot_routes = Blueprint('robot_routes', __name__)
@@ -13,27 +14,6 @@ def set_robot_instance(r):
 def motor_stop_route():
     robot.stop()
     return jsonify({"message": "Motor stopped"})
-
-@robot_routes.route('/motor/move', methods=['POST'])
-def motor_move_route():
-    data = request.get_json() or {}
-    direction = data.get("direction")
-    speed = data.get("speed", 50)  # valeur par défaut
-
-    if direction == "forward":
-        robot.move_forward(speed)
-        return jsonify({"message": f"Robot moving forward at speed {speed}"})
-    elif direction == "backward":
-        robot.move_backward(speed)
-        return jsonify({"message": f"Robot moving backward at speed {speed}"})
-    elif direction == "left":
-        robot.turn_left(speed)
-        return jsonify({"message": f"Robot turning left at speed {speed}"})
-    elif direction == "right":
-        robot.turn_right(speed)
-        return jsonify({"message": f"Robot turning right at speed {speed}"})
-    else:
-        return jsonify({"error": f"Invalid direction '{direction}'"}), 400
 
 
 @robot_routes.route('/motor/speed', methods=['POST'])
@@ -98,3 +78,46 @@ def servo_start_route():
 def servo_stop_route():
     robot.stop_head()
     return jsonify({"message": "Servo head STOP"}), 200
+
+@socketio.on('motor_move')
+def motor_move_route(data):
+    print("Received move command")
+    speed = data.get("speed", 50)
+    robot.move_robot(speed)
+    return jsonify({"message": "Motor ok"}), 200
+
+@socketio.on('move_head')
+def handle_move_servo(data):
+    """Handle servo movement requests from the frontend via WebSocket."""
+    print("Received move head data:", data)
+    pan = data.get('pan', 0)
+    tilt = data.get('tilt', 0)
+    print(f"Moving head to pan: {pan}, tilt: {tilt}")
+    
+    try:
+        pan = int(pan)
+        tilt = int(tilt)
+    except ValueError:
+        emit('error', {"error": "Invalid pan or tilt value. Must be integer."})
+        return
+
+    robot.start_head(pan, tilt)
+    emit('servo_moved', {"message": f"Servo head started moving: pan={pan}, tilt={tilt}"})
+
+@socketio.on('stop_head')
+def handle_stop_servo():
+    """Handle servo stop requests from the frontend via WebSocket."""
+    print("Received stop head command")
+    robot.stop_head()
+    emit('servo_stopped', {"message": "Servo head stopped"})
+
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+    emit('message', {'data': 'Connected'})
+
+@socketio.on('message')
+def handle_message(data):
+    print('Received message:', data)
+    emit('message', {'data': 'Message received'})
+

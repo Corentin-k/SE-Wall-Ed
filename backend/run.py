@@ -6,7 +6,7 @@ import logging
 import atexit
 import signal
 
-from api import create_app
+from api import create_app, socketio
 from robot.main import Robot
 
 
@@ -30,3 +30,4 @@ if __name__ == "__main__":
     atexit.register(lambda: robot.leds.destroy())
 
     app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False, threaded=True)
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True, use_reloader=False, threaded=True)

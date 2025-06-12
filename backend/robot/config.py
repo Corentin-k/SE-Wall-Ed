@@ -21,7 +21,7 @@ PAN_CHANNEL = 1
 TILT_CHANNEL = 2 
 
 # Servo motor for motor:
-MOTOR_CHANNEL = 0
+MOTOR_CHANNEL = 3
 
 # Motor pins
 MOTOR_M1_IN1 =  15      #Define the positive pole of M1

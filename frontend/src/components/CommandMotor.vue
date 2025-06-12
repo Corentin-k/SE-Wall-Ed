@@ -17,17 +17,42 @@
 <script setup lang="ts">
 import { reactive, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
+import { io } from "socket.io-client";
+
+const socket = io.connect('http://localhost:5000');
+
+// Handle connection errors
+socket.on('connect_error', (error) => {
+  console.error('Connection error:', error);
+});
+
+// Handle disconnection
+socket.on('disconnect', () => {
+  console.log('Disconnected from server');
+});
+
 
 // Set réactif pour suivre les touches moteur enfoncées
 const motorKeys = reactive(new Set<string>());
 
 async function sendMotor(direction: string) {
+  let speed = 0;
   if (direction === "stop") {
     // Si la direction est "stop", on envoie une requête pour arrêter le moteur
-    await axios.post("http://localhost:5000/motor/stop");
+    speed=0;
+    //await axios.post("http://10.3.208.73:5000/motor/move", { speed});
+    socket.emit('motor_move', {speed})
     return;
   }
-  await axios.post("http://localhost:5000/motor/move", { direction });
+  
+  if (direction === "forward") {
+    speed = 100
+  }
+  else if (direction === "backward") {
+    speed = -100
+  }
+  //await axios.post("http://10.3.208.73:5000/motor/move", { speed } );
+  socket.emit('motor_move', {speed})
 }
 
 function onMotorKeyDown(e: KeyboardEvent) {
