@@ -1,6 +1,6 @@
 ﻿from .camera         import Camera
 from .ultrasonics    import UltrasonicSensor
-from .motor2          import Motor
+from .motor         import Motors
 from .line_tracking  import LineTracker
 from .light_tracking import LightTracker
 from .servomotors    import ServoMotors
@@ -10,7 +10,7 @@ from .ws2812_led     import WS2812LED
 __all__ = [
     "Camera",
     "UltrasonicSensor",
-    "Motor",
+    "Motors",
     "LineTracker",
     "LightTracker",
     "ServoMotors",

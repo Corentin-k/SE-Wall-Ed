@@ -33,7 +33,7 @@ class Robot:
         """
         Initialise les moteurs pour le mouvement du robot.
         """
-        self.motor = Motor()
+        self.motor = Motors()
         self.motor_servomotor = ServoMotors(channel=MOTOR_CHANNEL, initial_angle=90, step_size=2)
 
     def move_forward(self, speed):
