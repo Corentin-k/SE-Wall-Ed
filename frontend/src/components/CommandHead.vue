@@ -60,6 +60,14 @@ onMounted(() => {
   // focus to capture keys
   const el = document.querySelector(".command-head") as HTMLElement;
   el.focus();
+  document.addEventListener("keydown", onKeyDown);
+  document.addEventListener("keyup", onKeyUp);
+});
+
+onBeforeUnmount(() => {
+  // Clean up the event listeners
+  document.removeEventListener("keydown", onKeyDown);
+  document.removeEventListener("keyup", onKeyUp);
 });
 </script>
 
