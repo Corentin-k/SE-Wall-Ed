@@ -18,7 +18,7 @@
 import { reactive, onMounted, onBeforeUnmount } from "vue";
 import { io } from "socket.io-client";
 
-const socket = io.connect('http://localhost:5000');
+const socket = io.connect('http://10.3.208.73:5000');
 
 // Handle connection errors
 socket.on('connect_error', (error) => {
