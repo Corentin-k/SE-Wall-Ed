@@ -3,7 +3,6 @@ from flask_socketio import SocketIO, emit
 from . import socketio
 from sensors import Camera
 
-
 robot_routes = Blueprint('robot_routes', __name__)
 robot = None
 
@@ -14,22 +13,6 @@ def set_robot_instance(r):
     global robot
     robot = r
     
-@robot_routes.route('/motor/stop', methods=['POST'])
-def motor_stop_route():
-    robot.stop()
-    return jsonify({"message": "Motor stopped"})
-
-
-@robot_routes.route('/motor/speed', methods=['POST'])
-def motor_speed_route():
-    data = request.get_json()
-    speed = data.get("speed")
-    if speed is not None:
-        robot.motor.set_speed(speed)
-        return jsonify({"message": f"Motor speed set to {speed}"})
-    else:
-        return jsonify({"error": "Speed not provided"}), 400
-
 # ---------------LED RGB---------------------------------------
 @robot_routes.route('/led/color', methods=['POST'])
 def set_led_color_route():
@@ -59,32 +42,9 @@ def gen():
         frame = camera.get_frame()
         yield(b'--frame\r\n'
               b'Content-Type:image/jpeg\r\n\r\n'+frame+b'\r\n')
-# ---------------Servo Motors---------------------------------------
-@robot_routes.route('/servo/start', methods=['POST'])
-def servo_start_route():
-    data = request.get_json() or {}
-    # Expect 'pan' and 'tilt' directly as integers from the frontend
-    pan = data.get('pan', 0)
-    tilt = data.get('tilt', 0)
 
-    try:
-        # Ensure they are integers, although the frontend should send them as such
-        pan = int(pan)
-        tilt = int(tilt)
-    except ValueError:
-        return jsonify({"error": "Invalid pan or tilt value. Must be integer."}), 400
-    
-    # Call robot.start_head with the combined pan and tilt values
-    # This will handle stopping any existing head movement thread and starting a new one
-    # with the combined directions, enabling simultaneous control.
-    robot.start_head(pan, tilt)
-    return jsonify({"message": f"Servo head movement started: pan={pan}, tilt={tilt}"})
 
-@robot_routes.route('/servo/stop', methods=['POST'])
-def servo_stop_route():
-    robot.stop_head()
-    return jsonify({"message": "Servo head STOP"}), 200
-
+# ---------------WebSocket Routes---------------------------------------
 @socketio.on('motor_move')
 def motor_move_route(data):
     speed = data.get("speed", 50)
