@@ -1,16 +1,13 @@
 import { createRouter, createWebHistory } from "vue-router";
-import type { RouteRecordRaw } from "vue-router";
 import Home from "@/views/Home.vue";
 import ColorPicker from "@/components/ColorPicker.vue";
 import Temperature from "@/components/Camera.vue";
 
 import Allcomponents from "@/views/Allcomponents.vue";
-import Inwork from "@/components/inwork.vue";
 
-const routes: Array<RouteRecordRaw> = [
+const routes = [
   { path: "/", redirect: "/home" },
   { path: "/home", name: "Home", component: Home },
-  { path: "/inwork", name: "InWork", component: Inwork },
   {
     path: "/motor",
     name: "Motor",

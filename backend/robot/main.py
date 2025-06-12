@@ -43,26 +43,6 @@ class Robot:
         self.motor = Motors()
         self.motor_servomotor = ServoMotors(channel=MOTOR_CHANNEL, initial_angle=90, step_size=2)
 
-    def move_forward(self, speed):
-        logger.info("Robot moving forward at speed %d", speed)
-        self.motor.set_speed(speed)
-
-    def move_backward(self, speed):
-        logger.info("Robot moving backward at speed %d", speed)
-        self.motor.set_speed(-speed)
-
-    def turn_left(self, speed):
-        logger.info("Robot turning left")
-        self.motor.move("left")
-
-    def turn_right(self, speed):
-        logger.info("Robot turning right")
-        self.motor.move("right")
-
-    def stop(self):
-        logger.info("Robot stopping")
-        self.motor.stop()
-
     def led(self, hex_color):
         self.leds.set_color_hex(hex_color)
 
@@ -115,3 +95,6 @@ class Robot:
 
     def move_robot(self, speed: int):
         self.motor.smooth_speed(speed)
+    
+    def change_direction(self, angle):
+        self.motor_servomotor.set_angle(angle)

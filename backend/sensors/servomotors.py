@@ -33,6 +33,11 @@ class ServoMotors:
             angle = 0
         elif angle > 180:
             angle = 180
+        # if self.channel == 0:
+        #     if angle < 73:
+        #         angle = 73
+        #     elif angle > 118:
+        #         angle = 118
         self.current_angle = angle 
         self.servo.angle = angle
 
@@ -51,82 +56,26 @@ class ServoMotors:
         self.set_angle(90)
 
 
-    
 def start_servos_control():
-    i2c = busio.I2C(SCL, SDA)
-    pca = PCA9685(i2c, address=0x5f) 
-    pca.frequency = 50 
-
-    PAN_CHANNEL = 1  
-    TILT_CHANNEL = 2 
-    
-    pan_servo = ServoMotors(pca, channel=PAN_CHANNEL, initial_angle=90, step_size=2)
-    tilt_servo = ServoMotors(pca, channel=TILT_CHANNEL, initial_angle=90, step_size=2)
-
-    # Variables d'état pour suivre la direction de mouvement actuelle de chaque servo
-    # 0 = arrêté, 1 = direction positive, -1 = direction négative
-    current_pan_direction = 0
-    current_tilt_direction = 0
-
-    print("Contrôle des servos avec les touches A/D (Pan) et W/S (Tilt).")
-    print("Appuyez sur 'Esc' pour quitter le programme.")
-
    
-            
-    new_pan_dir = 0 
-    if keyboard.is_pressed('d'): # Si 'd' est appuyée, direction droite
-        new_pan_dir = 1
-    elif keyboard.is_pressed('a'): # Sinon, si 'a' est appuyée, direction gauche
-        new_pan_dir = -1
-    
-    # Si la direction désirée pour le pan a changé, on la met à jour
-    if new_pan_dir != current_pan_direction:
-        current_pan_direction = new_pan_dir
-    
-    # Exécute le mouvement du pan si une direction est active 
-    if current_pan_direction != 0:
-        pan_servo.move_increment(current_pan_direction)
-
-
-    new_tilt_dir = 0 
-    if keyboard.is_pressed('w'): # Si 'w' est appuyée, direction haut
-        new_tilt_dir = 1
-    elif keyboard.is_pressed('s'): # Sinon, si 's' est appuyée, direction bas
-        new_tilt_dir = -1
-    
-    # Si la direction désirée pour le tilt a changé, on la met à jour
-    if new_tilt_dir != current_tilt_direction:
-        current_tilt_direction = new_tilt_dir
-
-    # Exécute le mouvement du tilt si une direction est active 
-    if current_tilt_direction != 0:
-        tilt_servo.move_increment(current_tilt_direction)
-
-        
-    
- 
-
-
-def start_servos_control():
-    i2c = busio.I2C(SCL, SDA)
-    pca = PCA9685(i2c, address=0x5f) 
-    pca.frequency = 50 
-
     PAN_CHANNEL = 1  
     TILT_CHANNEL = 2 
+    WHEEL_CHANNEL = 0
     
-    pan_servo = ServoMotors(channel=PAN_CHANNEL, initial_angle=90, step_size=2)
-    tilt_servo = ServoMotors(channel=TILT_CHANNEL, initial_angle=90, step_size=2)
+    pan_servo = ServoMotors(channel=PAN_CHANNEL)
+    tilt_servo = ServoMotors(channel=TILT_CHANNEL)
+    wheel_servo = ServoMotors(channel=WHEEL_CHANNEL)
 
     # Variables d'état pour suivre la direction de mouvement actuelle de chaque servo
     # 0 = arrêté, 1 = direction positive, -1 = direction négative
     current_pan_direction = 0
     current_tilt_direction = 0
+    current_wheel_direction = 0
 
-    print("Contrôle des servos avec les touches A/D (Pan) et W/S (Tilt).")
     print("Appuyez sur 'Esc' pour quitter le programme.")
 
     try:
+        c = 90
         while True:
             # Vérifie si la touche 'Esc' est enfoncée pour quitter
             if keyboard.is_pressed('esc'): 
@@ -160,6 +109,25 @@ def start_servos_control():
             # Exécute le mouvement du tilt si une direction est active 
             if current_tilt_direction != 0:
                 tilt_servo.move_increment(current_tilt_direction)
+
+            # Vérifie la direction des roues
+            new_wheel_dir = 0
+            if (keyboard.is_pressed('t') and c <= 118):
+                new_wheel_dir = 1
+                c += 1
+                print(c)
+
+            elif (keyboard.is_pressed('y') and c >= 73):
+                new_wheel_dir = -1
+                c -= 1
+                print(c) 
+
+            if new_wheel_dir != current_wheel_direction:
+                current_wheel_direction = new_wheel_dir
+                print(f"Wheel direction changed to: {current_wheel_direction}") 
+
+            if current_wheel_direction != 0:
+                wheel_servo.move_increment(current_wheel_direction)
 
             time.sleep(0.05) # Petite pause pour contrôler la vitesse et réduire l'utilisation CPU
 

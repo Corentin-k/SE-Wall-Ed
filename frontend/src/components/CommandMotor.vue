@@ -14,9 +14,8 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { reactive, onMounted, onBeforeUnmount } from "vue";
-import axios from "axios";
 import { io } from "socket.io-client";
 
 const socket = io.connect('http://localhost:5000');
@@ -33,48 +32,45 @@ socket.on('disconnect', () => {
 
 
 // Set réactif pour suivre les touches moteur enfoncées
-const motorKeys = reactive(new Set<string>());
+const motorKeys = reactive(new Set());
 
-async function sendMotor(direction: string) {
-  let speed = 0;
-  if (direction === "stop") {
-    // Si la direction est "stop", on envoie une requête pour arrêter le moteur
-    speed=0;
-    //await axios.post("http://10.3.208.73:5000/motor/move", { speed});
-    socket.emit('motor_move', {speed})
-    return;
+function sendMotor() {
+  if (motorKeys.has("z")) {
+    socket.emit('motor_move', {speed: 100})
   }
-  
-  if (direction === "forward") {
-    speed = 100
+  else if (motorKeys.has("s")) {
+    socket.emit('motor_move', {speed: -100})
   }
-  else if (direction === "backward") {
-    speed = -100
+  else {
+    socket.emit('motor_move', {speed: 0})
   }
-  //await axios.post("http://10.3.208.73:5000/motor/move", { speed } );
-  socket.emit('motor_move', {speed})
+
+  if (motorKeys.has("d")) {
+    socket.emit('turn_wheel', {direction: "right"})
+  }
+  else if (motorKeys.has("q")) {
+    socket.emit('turn_wheel', {direction: "left"})
+  }
+  else{
+    socket.emit('turn_wheel', {direction: "forward"})
+  }
+
 }
 
-function onMotorKeyDown(e: KeyboardEvent) {
+function onMotorKeyDown(e) {
   const k = e.key.toLowerCase();
   if (!["z", "q", "s", "d"].includes(k) || motorKeys.has(k)) return;
 
   motorKeys.add(k);
-  const dirMap: Record<string, string> = {
-    z: "forward",
-    q: "left",
-    s: "backward",
-    d: "right",
-  };
-  sendMotor(dirMap[k]);
+  sendMotor();
 }
 
-function onMotorKeyUp(e: KeyboardEvent) {
+function onMotorKeyUp(e) {
   const k = e.key.toLowerCase();
   if (!motorKeys.has(k)) return;
 
   motorKeys.delete(k);
-  sendMotor("stop");
+  sendMotor();
 }
 
 onMounted(() => {

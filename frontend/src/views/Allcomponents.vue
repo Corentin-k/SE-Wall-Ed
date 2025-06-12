@@ -21,14 +21,14 @@
   </div>
 </template>
 
-<script lang="ts">
+<script>
 import { defineComponent } from "vue";
-import Camera from "@/components/Camera.vue";
-import CommandHead from "@/components/CommandHead.vue";
-import CommandMotor from "@/components/CommandMotor.vue";
-import Lidar from "@/components/Lidar.vue";
-import Settings from "@/components/Settings.vue";
-import Mode from "@/components/Mode.vue"; // Assurez-vous que le chemin est correct
+import Camera from "../components/Camera.vue";
+import CommandHead from "../components/CommandHead.vue";
+import CommandMotor from "../components/CommandMotor.vue";
+import Lidar from "../components/Lidar.vue";
+import Settings from "../components/Settings.vue";
+import Mode from "../components/Mode.vue"; // Assurez-vous que le chemin est correct
 export default defineComponent({
   name: "Allcomponents",
   components: {

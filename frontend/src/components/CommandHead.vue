@@ -14,9 +14,8 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
-import axios from "axios";
 import { io } from "socket.io-client";
 
 const socket = io.connect('http://localhost:5000');
@@ -31,14 +30,14 @@ socket.on('disconnect', () => {
   console.log('Disconnected from server');
 });
 
-const headKeys = ref(new Set<string>());
+const headKeys = ref(new Set());
 
 async function sendCombinedHeadCommand() {
   let pan = 0,
     tilt = 0;
 
-  if (headKeys.value.has("l")) pan = 1;
-  else if (headKeys.value.has("j")) pan = -1;
+  if (headKeys.value.has("l")) pan = -1;
+  else if (headKeys.value.has("j")) pan = 1;
 
   if (headKeys.value.has("i")) tilt = 1;
   else if (headKeys.value.has("k")) tilt = -1;
@@ -55,7 +54,7 @@ async function sendCombinedHeadCommand() {
   }
 }
 
-function onKeyDown(e: KeyboardEvent) {
+function onKeyDown(e) {
   const k = e.key.toLowerCase();
   if (!["i", "j", "k", "l"].includes(k)) return;
   if (!headKeys.value.has(k)) {
@@ -64,7 +63,7 @@ function onKeyDown(e: KeyboardEvent) {
   }
 }
 
-function onKeyUp(e: KeyboardEvent) {
+function onKeyUp(e) {
   const k = e.key.toLowerCase();
   if (headKeys.value.delete(k)) {
     sendCombinedHeadCommand();
@@ -73,7 +72,7 @@ function onKeyUp(e: KeyboardEvent) {
 
 onMounted(() => {
   // focus to capture keys
-  const el = document.querySelector(".command-head") as HTMLElement;
+  const el = document.querySelector(".command-head");
   el.focus();
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);

@@ -6,6 +6,9 @@ from . import socketio
 robot_routes = Blueprint('robot_routes', __name__)
 robot = None
 
+def map_range(x,in_min,in_max,out_min,out_max):
+  return (x - in_min)/(in_max - in_min) *(out_max - out_min) +out_min
+
 def set_robot_instance(r):
     global robot
     robot = r
@@ -81,18 +84,27 @@ def servo_stop_route():
 
 @socketio.on('motor_move')
 def motor_move_route(data):
-    print("Received move command")
     speed = data.get("speed", 50)
     robot.move_robot(speed)
-    return jsonify({"message": "Motor ok"}), 200
+
+@socketio.on('turn_wheel')
+def turn_wheel(data):
+    direction = data.get("direction", "forward")
+
+    angle = 0
+    if direction == "left":
+        angle = 37
+    elif direction == "right":
+        angle = -37
+    
+    angle = map_range(angle, -98, 82, 0, 180)
+    robot.change_direction(angle)
 
 @socketio.on('move_head')
 def handle_move_servo(data):
     """Handle servo movement requests from the frontend via WebSocket."""
-    print("Received move head data:", data)
     pan = data.get('pan', 0)
     tilt = data.get('tilt', 0)
-    print(f"Moving head to pan: {pan}, tilt: {tilt}")
     
     try:
         pan = int(pan)
@@ -107,7 +119,6 @@ def handle_move_servo(data):
 @socketio.on('stop_head')
 def handle_stop_servo():
     """Handle servo stop requests from the frontend via WebSocket."""
-    print("Received stop head command")
     robot.stop_head()
     emit('servo_stopped', {"message": "Servo head stopped"})
 
