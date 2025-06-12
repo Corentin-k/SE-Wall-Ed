@@ -4,7 +4,6 @@
       <router-link to="/home" class="nav-item">Home</router-link>
       <router-link to="/color" class="nav-item">LED Control</router-link>
       <router-link to="/temperature" class="nav-item">Temperature</router-link>
-      <router-link to="/inwork" class="nav-item">In Work</router-link>
       <router-link to="/motor" class="nav-item">Motor</router-link>
       <router-link to="/Allcomponents" class="nav-item">All</router-link>
     </nav>

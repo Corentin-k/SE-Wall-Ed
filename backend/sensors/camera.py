@@ -1,6 +1,8 @@
 ﻿import time
 import io
 import threading
+import cv2
+import libcamera
 from picamera2 import Picamera2, Preview
 try:
     from greenlet import getcurrent as get_ident
@@ -48,21 +50,23 @@ class Camera:
     @staticmethod
     def frames():
         with Picamera2() as camera:
+
+            preview_config = camera.preview_configuration
+            preview_config.size = (640, 480)
+            preview_config.format = 'RGB888'  # 'XRGB8888', 'XBGR8888', 'RGB888', 'BGR888', 'YUV420'
+            preview_config.colour_space = libcamera.ColorSpace.Sycc()
+            preview_config.buffer_count = 4
+            preview_config.queue = True
+            
             camera.start()
 
-            # let camera warm up
-            time.sleep(2) 
-
-            stream = io.BytesIO()
             try:
                 while True:
-                    camera.capture_file(stream, format='jpeg')
-                    stream.seek(0)
-                    yield stream.read()
-
-                    # reset stream for next frame
-                    stream.seek(0)
-                    stream.truncate()
+                    # camera.capture_file(stream, format='jpeg')
+                    img = camera.capture_array()
+                    
+                    if cv2.imencode('.jpg', img)[0]:
+                        yield cv2.imencode('.jpg', img)[1].tobytes()
             finally:
                 camera.stop()
 
