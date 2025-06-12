@@ -77,22 +77,22 @@ class Camera:
         frames_iterator = cls.frames()
         try:
             for frame in frames_iterator:
-                if cls._stop_event.is_set():
-                    print('Camera destroy requested, stopping thread.')
-                    break
+                # if cls._stop_event.is_set():
+                #     print('Camera destroy requested, stopping thread.')
+                #     break
                 Camera.frame = frame
                 # Camera.event.set()  # send signal to clients
                 time.sleep(0)
 
                 # if there hasn't been any clients asking for frames in
                 # the last 10 seconds then stop the thread
-                if time.time() - Camera.last_access > 10 and not Camera.slow:
-                    Camera.slow = True
-                    print('Slowing down camera thread due to inactivity.')
+                # if time.time() - Camera.last_access > 10 and not Camera.slow:
+                #     Camera.slow = True
+                #     print('Slowing down camera thread due to inactivity.')
 
-                # if no clients are connected, slow down the thread
-                if Camera.slow:
-                    time.sleep(1)
+                # # if no clients are connected, slow down the thread
+                # if Camera.slow:
+                #     time.sleep(1)
         finally:
             print('Camera thread stopped.')
             frames_iterator.close()

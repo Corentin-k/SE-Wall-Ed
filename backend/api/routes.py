@@ -1,6 +1,7 @@
 ﻿from flask import Blueprint, request, jsonify, Response
 from flask_socketio import SocketIO, emit
 from . import socketio
+from sensors import Camera
 
 
 robot_routes = Blueprint('robot_routes', __name__)
@@ -52,8 +53,10 @@ def video_feed():
 
 def gen():
     """Fonction génératrice de flux vidéo."""
+    camera = Camera()
     while True:
-        frame = robot.get_camera_frame()
+        # frame = robot.get_camera_frame()
+        frame = camera.get_frame()
         yield(b'--frame\r\n'
               b'Content-Type:image/jpeg\r\n\r\n'+frame+b'\r\n')
 # ---------------Servo Motors---------------------------------------

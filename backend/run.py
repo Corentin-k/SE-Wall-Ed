@@ -25,9 +25,9 @@ if __name__ == "__main__":
         robot.camera.destroy()
         sys.exit(0)
 
-    signal.signal(signal.SIGINT, cleanup_and_exit)
-    signal.signal(signal.SIGTERM, cleanup_and_exit)
-    atexit.register(lambda: robot.leds.destroy())
+    # signal.signal(signal.SIGINT, cleanup_and_exit)
+    # signal.signal(signal.SIGTERM, cleanup_and_exit)
+    # atexit.register(lambda: robot.leds.destroy())
 
     app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False, threaded=True)
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True, use_reloader=False, threaded=True)
+    # socketio.run(app, host="0.0.0.0", port=5000, debug=True, use_reloader=False, threaded=True)
