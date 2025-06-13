@@ -2,10 +2,7 @@
 
 from robot.config import *
 
-
-# Instance globale du moteur
 motor = Motor()
-
 
 def set_motor_speed(speed):
     motor.set_speed(speed)

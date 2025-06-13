@@ -32,6 +32,8 @@ class Robot:
 
         logger.info("Robot initialized")
 
+    # -------------------- Initialisation des composants -------------------
+
     def init_servo_head(self):
         self.pan_servo = ServoMotors(channel=PAN_CHANNEL, initial_angle=90, step_size=2)
         self.tilt_servo = ServoMotors(channel=TILT_CHANNEL, initial_angle=90, step_size=2)
@@ -42,6 +44,8 @@ class Robot:
         """
         self.motor = Motors()
         self.motor_servomotor = ServoMotors(channel=MOTOR_CHANNEL, initial_angle=90, step_size=2)
+
+    # -------------------- Méthodes de contrôle du robot -------------------
 
     def led(self, hex_color):
         self.leds.set_color_hex(hex_color)
