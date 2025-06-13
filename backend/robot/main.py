@@ -11,12 +11,12 @@ class Robot:
     def __init__(self):
         # Initialisation des composants
         self.camera = Camera()
-        self.leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
-        self.leds.setup()
+        
 
         self.init_servo_head()
         self.init_movement()
-
+        self.init_leds()
+        self.buzzer = Buzzer()
         # Variables pour le pilotage de la tête
         self._pan = 0
         self._tilt = 0
@@ -44,6 +44,13 @@ class Robot:
         """
         self.motor = Motors()
         self.motor_servomotor = ServoMotors(channel=MOTOR_CHANNEL, initial_angle=90, step_size=2)
+    def init_leds(self):
+        """
+        Initialise les LEDs du robot.
+        """
+        self.leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
+        self.leds.setup()
+        self.ws2812= WS2812LED(8, 255) 
 
     # -------------------- Méthodes de contrôle du robot -------------------
 
@@ -102,3 +109,18 @@ class Robot:
     
     def change_direction(self, angle):
         self.motor_servomotor.set_angle(angle)
+
+    def mode_police(self):
+        """
+        Met le robot en mode police.
+        """
+        self.leds.start_police(interval=0.3)
+        self.ws2812.police()
+        threading.Thread(target=self.buzzer.play_tune, args=("Police",), daemon=True).start()
+        
+    def stop_police(self):
+        # Arrête le buzzer
+        self.buzzer.stop()
+        self.ws2812.led_close()
+        self.leds.stop_police()
+    

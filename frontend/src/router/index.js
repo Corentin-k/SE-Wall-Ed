@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import Home from "@/views/Home.vue";
 import ColorPicker from "@/components/ColorPicker.vue";
 import Temperature from "@/components/Camera.vue";
-
+import CommandMotor from "@/components/CommandMotor.vue";
 import Allcomponents from "@/views/Allcomponents.vue";
 
 const routes = [
@@ -11,7 +11,7 @@ const routes = [
   {
     path: "/motor",
     name: "Motor",
-    component: () => import("@/components/CommandMotor.vue"),
+    component: CommandMotor,
   },
   { path: "/color", name: "ColorPicker", component: ColorPicker },
   { path: "/temperature", name: "Temperature", component: Temperature },

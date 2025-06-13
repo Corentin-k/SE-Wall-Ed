@@ -2,7 +2,7 @@
   <div class="settings">
     <h2>Mode</h2>
 
-    <button @click="updateSpeed">Police Mode</button>
+    <button @click="activePolice">Police Mode</button>
     <button @click="updateSpeed">Line Tracking</button>
     <button @click="updateSpeed">Light Tracking</button>
   </div>
@@ -25,6 +25,17 @@ async function updateSpeed() {
   } catch (error: any) {
     console.error(
       "Error updating speed:",
+      error.response?.data || error.message
+    );
+  }
+}
+async function activePolice() {
+  try {
+    const response = await axios.post("http://10.3.208.73:5000/mode/police");
+    console.log(response.data.message);
+  } catch (error: any) {
+    console.error(
+      "Error activating police mode:",
       error.response?.data || error.message
     );
   }

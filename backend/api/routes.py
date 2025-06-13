@@ -25,6 +25,12 @@ def set_led_color_route():
         return jsonify({"message": f"LED color set to {color_hex}"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+# ---------------Root Mode---------------------------------------
+
+@robot_routes.route('/mode/police', methods=['POST'])
+def set_mode_police():
+    robot.set_mode("police")
+    return jsonify({"message": "Mode set to police"}), 200
 
 
 # ---------------Camera Streaming---------------------------------------
@@ -42,7 +48,6 @@ def gen():
         frame = camera.get_frame()
         yield(b'--frame\r\n'
               b'Content-Type:image/jpeg\r\n\r\n'+frame+b'\r\n')
-
 
 # ---------------WebSocket Routes---------------------------------------
 @socketio.on('motor_move')

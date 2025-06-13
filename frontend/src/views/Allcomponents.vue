@@ -4,7 +4,7 @@
     <div class="column">
       <Camera />
       <Lidar />
-      <ColorPicker />
+      <ColorPicker class="color-picker" />
     </div>
 
     <!-- Colonne 2 -->
@@ -63,5 +63,8 @@ export default defineComponent({
 
 .column {
   min-height: 200px;
+}
+.color-picker {
+  transform: scale(0.7);
 }
 </style>

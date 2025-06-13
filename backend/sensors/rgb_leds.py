@@ -1,4 +1,5 @@
 import RPi.GPIO as GPIO
+import threading
 from gpiozero import PWMOutputDevice as PWM
 import curses
 import time
@@ -88,6 +89,43 @@ class RGBLEDs:
         self.R_R.close()
         self.R_G.close()
         self.R_B.close()
+    
+    def start_police(self, interval: float = 0.5):
+        """
+        Lance un clignotement rouge/bleu en arrière-plan.
+        """
+        # Si un police déjà en cours, on ne relance pas
+        if getattr(self, "_police_thread", None) and self._police_thread.is_alive():
+            return
+
+        # Flag d’arrêt
+        self._police_stop = threading.Event()
+
+        def _police_loop():
+            while not self._police_stop.is_set():
+                self.set_color_hex("#FF0000")  # rouge
+                time.sleep(interval)
+                self.set_color_hex("#0000FF")  # bleu
+                time.sleep(interval)
+            # À la fin, on éteint toutes les LEDs
+            self.clear_all()
+
+        # On démarre le thread daemon
+        self._police_thread = threading.Thread(target=_police_loop, daemon=True)
+        self._police_thread.start()
+
+    def stop_police(self):
+        """
+        Arrête le clignotement police et éteint les LEDs.
+        """
+        if getattr(self, "_police_stop", None):
+            self._police_stop.set()
+            # On peut attendre la fin si besoin :
+            self._police_thread.join()
+        self.clear_all()
+
+ 
+
 
 MAPPING = {
     ord('r'): 'L_R',

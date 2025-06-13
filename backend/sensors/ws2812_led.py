@@ -3,7 +3,7 @@ import threading
 import numpy
 from numpy import sin, cos, pi
 import time
-class Adeept_SPI_LedPixel(threading.Thread):
+class WS2812LED(threading.Thread):
     def __init__(self, count = 8, bright = 255, sequence='GRB', bus = 0, device = 0, *args, **kwargs):
         self.set_led_type(sequence)
         self.set_led_count(count)
@@ -16,7 +16,7 @@ class Adeept_SPI_LedPixel(threading.Thread):
         self.breathSteps = 10
         #self.spi_gpio_info()
         self.set_all_led_color(0,0,0)
-        super(Adeept_SPI_LedPixel, self).__init__(*args, **kwargs)
+        super(WS2812LED, self).__init__(*args, **kwargs)
         self.__flag = threading.Event()
         self.__flag.clear()
     def led_begin(self, bus = 0, device = 0):
@@ -56,6 +56,7 @@ class Adeept_SPI_LedPixel(threading.Thread):
             print("SPI6-MOSI: GPIO20(WS2812-PIN)  SPI6-MISO: GPIO19  SPI6-SCLK: GPIO21  SPI6-CE0: GPIO18  SPI6-CE1: GPIO27")
     
     def led_close(self):
+        self.lightMode = 'none'
         self.set_all_led_rgb([0,0,0])
         self.spi.close()
     
@@ -273,7 +274,7 @@ if __name__ == '__main__':
     print("spidev device as show:")
     os.system("ls /dev/spi*")
     
-    led = Adeept_SPI_LedPixel(8, 255)              # Use MOSI for /dev/spidev0 to drive the lights
+    led = WS2812LED(8, 255)              # Use MOSI for /dev/spidev0 to drive the lights
 
     try:
         if led.check_spi_state() != 0:

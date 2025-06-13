@@ -5,7 +5,9 @@ class Buzzer:
     def __init__(self, pin=18):
         self.buzzer = TonalBuzzer(pin)
 
-    def play_tune(self, tune):
+    def play_tune(self, tune=None, mode="default" ):
+        if mode == "Police":
+            tune = Police
         for note, duration in tune:
             print(note if note else "Pause")
             self.buzzer.play(note)
