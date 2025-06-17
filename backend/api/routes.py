@@ -5,6 +5,7 @@ from sensors import Camera
 
 robot_routes = Blueprint('robot_routes', __name__)
 robot = None
+police_on = False 
 
 def map_range(x,in_min,in_max,out_min,out_max):
   return (x - in_min)/(in_max - in_min) *(out_max - out_min) +out_min
@@ -29,8 +30,16 @@ def set_led_color_route():
 
 @robot_routes.route('/mode/police', methods=['POST'])
 def set_mode_police():
-    robot.set_mode("police")
-    return jsonify({"message": "Mode set to police"}), 200
+    global police_on
+    if not police_on:
+        robot.mode_police()
+        police_on = True
+        msg = "Mode police activé"
+    else:
+        robot.stop_police()      
+        police_on = False
+        msg = "Mode police désactivé"
+    return jsonify({"message": msg, "police_on": police_on})
 
 
 # ---------------Camera Streaming---------------------------------------
@@ -42,10 +51,8 @@ def video_feed():
 
 def gen():
     """Fonction génératrice de flux vidéo."""
-    camera = Camera()
     while True:
-        # frame = robot.get_camera_frame()
-        frame = camera.get_frame()
+        frame = robot.get_camera_frame()
         yield(b'--frame\r\n'
               b'Content-Type:image/jpeg\r\n\r\n'+frame+b'\r\n')
 
