@@ -1,30 +1,13 @@
 <template>
   <div class="camera">
     <h2>Camera</h2>
-    <img src="http://10.3.208.73:5000/camera" alt="Video Stream" />
+    <!-- Le navigateur gère nativement le MJPEG -->
+    <img :src="streamUrl" alt="Video Stream" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref } from "vue";
-
-const videoElement = ref<HTMLVideoElement | null>(null);
-let stream: MediaStream | null = null;
-
-onMounted(async () => {
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    if (videoElement.value) {
-      videoElement.value.srcObject = stream;
-    }
-  } catch (error) {
-    console.error("Erreur d'accès à la caméra :", error);
-  }
-});
-
-onBeforeUnmount(() => {
-  stream?.getTracks().forEach((track) => track.stop());
-});
+const streamUrl = 'http://10.3.208.73:5000/camera';
 </script>
 
 <style scoped>
@@ -33,14 +16,12 @@ onBeforeUnmount(() => {
   padding: 1rem;
   background: #1e1e1e;
   border-radius: 10px;
-  max-width: 600px;
+  max-width: 640px;
   margin: 2rem auto;
   color: white;
 }
-
 img {
   width: 100%;
-  max-height: 400px;
   border: 2px solid #bb86fc;
   border-radius: 10px;
 }

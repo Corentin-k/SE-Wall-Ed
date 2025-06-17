@@ -4,7 +4,7 @@ import ColorPicker from "@/components/ColorPicker.vue";
 import Temperature from "@/components/Camera.vue";
 import CommandMotor from "@/components/CommandMotor.vue";
 import Allcomponents from "@/views/Allcomponents.vue";
-
+import Mode from "@/components/Mode.vue";
 const routes = [
   { path: "/", redirect: "/home" },
   { path: "/home", name: "Home", component: Home },
@@ -16,6 +16,7 @@ const routes = [
   { path: "/color", name: "ColorPicker", component: ColorPicker },
   { path: "/temperature", name: "Temperature", component: Temperature },
   { path: "/allcomponents", name: "Allcomponents", component: Allcomponents },
+  { path: "/line_tracking", name: "LineTracking", component: Mode},
 ];
 
 const index = createRouter({

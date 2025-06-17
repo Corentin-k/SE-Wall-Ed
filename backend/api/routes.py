@@ -2,7 +2,7 @@
 from flask_socketio import SocketIO, emit
 from . import socketio
 from sensors import Camera
-
+import time
 robot_routes = Blueprint('robot_routes', __name__)
 robot = None
 police_on = False 
@@ -43,12 +43,32 @@ def set_mode_police():
 
 
 # ---------------Camera Streaming---------------------------------------
+#@robot_routes.route('/camera')
+#def video_feed():
+#    """Videostreamingroute.Putthisinthesrcattributeofanimgtag."""
+#    return Response(gen(),
+#        mimetype='multipart/x-mixed-replace;boundary=frame')
 @robot_routes.route('/camera')
 def video_feed():
-    """Videostreamingroute.Putthisinthesrcattributeofanimgtag."""
-    return Response(gen(),
-        mimetype='multipart/x-mixed-replace;boundary=frame')
-
+    """Flux MJPEG continu"""
+    def gen():
+        while True:
+            frame = robot.get_camera_frame()
+            if not frame:
+                time.sleep(0.01)
+                continue
+            yield (
+                b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n'
+            )
+            # throttle
+            time.sleep(1/30)
+    response = Response(gen(), mimetype='multipart/x-mixed-replace;boundary=frame')
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+    
 def gen():
     """Fonction génératrice de flux vidéo."""
     while True:
@@ -107,3 +127,31 @@ def handle_message(data):
     print('Received message:', data)
     emit('message', {'data': 'Message received'})
 
+# --- NEW: Line Tracking WebSocket Events ---
+@socketio.on('start_line_tracking')
+def handle_start_line_tracking():
+    """
+    Handles requests from the frontend via WebSocket to start line tracking.
+    """
+    if robot:
+        try:
+            robot.start_line_tracking()
+            emit('line_tracking_status', {"message": "Line tracking started", "active": True})
+        except Exception as e:
+            emit('error', {"error": f"Failed to start line tracking: {str(e)}"})
+    else:
+        emit('error', {"error": "Robot instance not set."})
+
+@socketio.on('stop_line_tracking')
+def handle_stop_line_tracking():
+    """
+    Handles requests from the frontend via WebSocket to stop line tracking.
+    """
+    if robot:
+        try:
+            robot.stop_line_tracking()
+            emit('line_tracking_status', {"message": "Line tracking stopped", "active": False})
+        except Exception as e:
+            emit('error', {"error": f"Failed to stop line tracking: {str(e)}"})
+    else:
+        emit('error', {"error": "Robot instance not set."})

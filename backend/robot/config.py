@@ -32,3 +32,7 @@ MOTOR_M3_IN1 =  11      #Define the positive pole of M3
 MOTOR_M3_IN2 =  10      #Define the negative pole of M3
 MOTOR_M4_IN1 =  8       #Define the positive pole of M4
 MOTOR_M4_IN2 =  9       #Define the negative pole of M4
+
+line_pin_left = 22
+line_pin_middle = 27
+line_pin_right = 17

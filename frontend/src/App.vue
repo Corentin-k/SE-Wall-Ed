@@ -6,7 +6,9 @@
       <router-link to="/temperature" class="nav-item">Temperature</router-link>
       <router-link to="/motor" class="nav-item">Motor</router-link>
       <router-link to="/Allcomponents" class="nav-item">All</router-link>
-    </nav>
+      <router-link to="/line_tracking" class="nav-item">Line</router-link>
+   
+</nav>
     <router-view></router-view>
 
     <footer>

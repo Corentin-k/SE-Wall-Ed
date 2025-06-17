@@ -1,5 +1,5 @@
 ﻿from sensors.motor2 import Motor
-
+from sensors import *
 from robot.config import *
 
 motor = Motor()
@@ -12,6 +12,3 @@ def stop_motor():
     motor.stop()
     return "Motor stopped"
 
-
-
-    

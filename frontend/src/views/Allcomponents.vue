@@ -8,16 +8,15 @@
     </div>
 
     <!-- Colonne 2 -->
-    <div class="column">
+     <div class="column">
       <CommandHead />
       <CommandMotor />
       <Mode />
-    </div>
+    </div> 
 
     <!-- Colonne 3 -->
     <div class="column">
       <Settings />
-      <!-- tu peux ajouter d’autres composants ici si besoin -->
     </div>
   </div>
 </template>
