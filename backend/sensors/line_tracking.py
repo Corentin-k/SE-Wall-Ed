@@ -65,16 +65,7 @@ class LineTracker:
     #     self.print_status() 
     #     time.sleep(0.1)
 
-    # def stop_robot(self):
-    #     """
-    #     Arrête les moteurs et réinitialise les servos à leur position centrale.
-    #     """
-    #     print("Stopping motors and resetting servos...")
-    #     self.motors.smooth_speed(0) 
-    #     self.wheel_servo.set_angle(90) 
-    #     self.tilt_servo.set_angle(90) 
-    #     time.sleep(0.5) 
-
+   
 if __name__ == "__main__":
     tracker = LineTracker()
     # try:

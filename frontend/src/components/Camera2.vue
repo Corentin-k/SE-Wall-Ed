@@ -18,16 +18,13 @@ image.crossOrigin = "Anonymous";
 
 image.onload = () => {
   var context2d = canvaElement.value.getContext("2d");
-  
-  if (context2d) {
-    console.log("loading img")
-    context2d.drawImage(image, 0, 0, 640, 480);
-  }
+  context2d.drawImage(image, 0, 0, 640, 480);
   requestAnimationFrame(fetchImage)
 };
 
 const fetchImage = function() {
   image.src = "http://10.3.208.73:5000/camera?rand=" + Math.random();
+  
 }
 
 onMounted(async () => {

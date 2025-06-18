@@ -120,6 +120,11 @@ class Motors:
     def smooth_speed(self, target_speed, acceleration = 50):
         self.acceleration_rate = acceleration
         self.motor1_target_speed = target_speed
+    
+    def smooth_speed_and_wait(self, target_speed, acceleration = 50):
+        self.smooth_speed(target_speed, acceleration)
+        speed_diff = abs(self.motor1_target_speed - map_range(self.motor1.throttle, -1, 1, -100, 100))
+        time.sleep(1 / self.smooth_step_count * abs(speed_diff) / 100)
 
 
 

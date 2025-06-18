@@ -141,5 +141,29 @@ def start_servos_control():
         keyboard.unhook_all() # Décroche tous les écouteurs du clavier pour une sortie propre
         print("Programme terminé.")
 
+def servo_test():
+    PAN_CHANNEL = 1  
+    TILT_CHANNEL = 2 
+    WHEEL_CHANNEL = 0
+    
+    pan_servo = ServoMotors(channel=PAN_CHANNEL)
+    tilt_servo = ServoMotors(channel=TILT_CHANNEL)
+    wheel_servo = ServoMotors(channel=WHEEL_CHANNEL)
+
+    pan_servo.set_angle(20)
+    tilt_servo.set_angle(20)
+    wheel_servo.set_angle(90)
+    time.sleep(1)
+
+    for i in range(400, 200, -10):
+        print("moving in ", i, "ms")
+        pan_servo.set_angle(170)
+        tilt_servo.set_angle(170)
+        time.sleep(i / 1000.0)
+        pan_servo.set_angle(20)
+        tilt_servo.set_angle(20)
+        time.sleep(i / 1000.0)
+
 if __name__ == "__main__":
-    start_servos_control()
+    # start_servos_control()
+    servo_test()
