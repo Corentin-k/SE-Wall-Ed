@@ -62,7 +62,7 @@ def set_mode_automatic_processing():
     data = request.get_json() or {}
     mode = data.get("mode", "start")
     if mode == "start":
-        robot.start_automaticProcessing()
+        robot.start_automatic_processing()
         return jsonify({"message": "Mode traitement automatique démarré"})
     elif mode == "stop":
         robot.stop_robot()

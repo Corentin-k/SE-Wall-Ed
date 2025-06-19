@@ -4,7 +4,9 @@ import logging
 from sensors import *
 from robot.config import *
 import asyncio
+
 from robot.controller import *
+from robot.ligne_tracking_processing import *
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +100,6 @@ class Robot:
                 pan, tilt = self._pan, self._tilt
             self.move_head(pan, tilt)
             time.sleep(interval)
-        # Sur shutdown, recentre la tête
         self.move_head(0, 0)
 
     def start_head(self, pan: int, tilt: int):
@@ -117,7 +118,7 @@ class Robot:
             self._pan = 0
             self._tilt = 0
 
-    def shutdown(self):
+    def shutdown_head(self):
         """
         Termine proprement le thread de mouvement de la tête.
         """
@@ -145,128 +146,18 @@ class Robot:
         self.ws2812.stop()
         self.leds.stop_police()
 
-    def shutdown_robot(self):
-        """
-        Nettoie les ressources du robot.
-        """
-        self.stop_robot()
-        self.buzzer.stop()
-        self.pan_servo.stop()
-        self.tilt_servo.stop()
-        self.motor_servomotor.stop()
-        self.ws2812.led_close()
-        self.leds.destroy()
+    
 
-    def radarScan(self):
-        pwm0_min = 0
-        pwm0_max = 180
-        scan_speed = 1
-        result = []
-        self.motor_servomotor.set_angle(pwm0_min) 
-        while pwm0_min < pwm0_max:
-            self.motor_servomotor.set_angle(pwm0_min + scan_speed) 
-            dist = self.ultra.get_distance_cm()
-            if dist > 20:
-                continue
-            pwm0_min = pwm0_min + scan_speed
-            result.append([dist, pwm0_min])
-            time.sleep(0.02)
-        self.motor_servomotor.set_angle(90) 
-        return result
 
-    def distRedress(self):
-        mark = 0
-        distValue = self.ultra.get_distance_cm()
-        while True:
-            distValue = self.ultra.get_distance_cm()
-            if distValue > 900:
-                mark += 1
-            elif mark > 5 or distValue < 900:
-                break
-            print(distValue)
-        return round(distValue, 2)
+    def start_automatic_processing(self):
+            while True:
+                automatic_processing(self)
 
     def start_line_tracking(self):
-        """
-        Active le mode de suivi de ligne du robot.
-        Ceci démarrera la boucle de traitement de ligne du LineTracker.
-        """
-        logger.info("Starting line tracking mode.")
-        self.move_robot(0)
-        self.change_direction(90)
-        time.sleep(0.1)
+        activate_line_tracking(self)
+    
 
-        self._line_tracking_running = True
-        self._line_tracking_thread = threading.Thread(target=self._run_line_tracking_loop, daemon=True)
-        self._line_tracking_thread.start()
-
-
-    def _run_line_tracking_loop(self):
-        """
-        Boucle interne pour exécuter le traitement de suivi de ligne.
-        """
-        while self._line_tracking_running:
-            self.trackLineProcessing()
-
-    def stop_line_tracking(self):
-        """
-        Désactive le mode de suivi de ligne du robot.
-        """
-        logger.info("Stopping line tracking mode.")
-        self._line_tracking_running = False
-        if self._line_tracking_thread and self._line_tracking_thread.is_alive():
-            self._line_tracking_thread.join()
-        self.stop_robot()
-
-    def trackLineProcessing(self):
-        status = self.line_tracker.read_sensors()
-        left = status['left']
-        middle = status['middle']
-        right = status['right']
-
-        robot_speed = 25
-        acceleration_rate = 150 
-        turn_angle_left = 37  
-        turn_angle_right = -37 
-        print("left: {left}   middle: {middle}   right: {right}".format(**status))
-
-        if middle == 1:
-            if self._previous_middle == 0:
-                self.motor.smooth_speed_and_wait(0, acceleration_rate) # stop the robot before going forward
-
-            if left == 0 and right == 1:
-                print("Adjusting right (line slightly left)")
-                angle = map_range(turn_angle_right, -98, 82, 0, 180)
-                self.change_direction(angle)
-                self.motor.smooth_speed(robot_speed, acceleration=acceleration_rate) 
-            elif left == 1 and right == 0: 
-                print("Adjusting left (line slightly right)")
-                angle = map_range(turn_angle_left, -98, 82, 0, 180)
-                self.change_direction(angle)
-                self.motor.smooth_speed(robot_speed, acceleration=acceleration_rate)
-            else: 
-                angle = map_range(0, -98, 82, 0, 180)
-                self.change_direction(angle)
-                print("Going straight (middle detected)")
-                self.motor.smooth_speed(robot_speed, acceleration=acceleration_rate) 
-        else:
-            if self._previous_middle == 1:
-                self.motor.smooth_speed_and_wait(0, acceleration_rate) # stop the robot before going forward
-            if left == 1:
-                print("Turning left to find line")
-                angle = map_range(turn_angle_right, -98, 82, 0, 180)
-                self.change_direction(angle)
-                self.motor.smooth_speed(-robot_speed, acceleration=acceleration_rate)
-            elif right == 1: 
-                print("Turning right to find line")
-                angle = map_range(turn_angle_left, -98, 82, 0, 180)
-                self.change_direction(angle)
-                self.motor.smooth_speed(-robot_speed, acceleration=acceleration_rate) 
-            else: 
-                print("NOOOO we lost the line :(")
-                self.motor.smooth_speed(-robot_speed, acceleration=acceleration_rate) 
-
-        self._previous_middle = middle
+    
 
     def stop_robot(self):
         """
@@ -277,6 +168,16 @@ class Robot:
         self.motor_servomotor.set_angle(90)
         time.sleep(0.5)
 
-    def start_automaticProcessing(self):
-        while True:
-            automaticProcessing(self)
+    
+    def shutdown_robot(self):
+            """
+            Nettoie les ressources du robot.
+            """
+            self.stop_robot()
+            self.shutdown_head()
+            self.buzzer.stop()
+            self.pan_servo.stop()
+            self.tilt_servo.stop()
+            self.motor_servomotor.stop()
+            self.ws2812.led_close()
+            self.leds.destroy()

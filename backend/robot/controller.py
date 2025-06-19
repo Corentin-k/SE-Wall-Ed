@@ -4,7 +4,9 @@ import time
 def map_range(x, in_min, in_max, out_min, out_max):
     return (x - in_min) / (in_max - in_min) * (out_max - out_min) + out_min
 
-def radarScan(robot):
+
+
+def radar_scan(robot):
         pwm0_min = 0
         pwm0_max = 180
         scan_speed = 2
@@ -37,7 +39,7 @@ def radarScan(robot):
             #     max([item[0] for item in robot.result])
 		
 
-def automaticProcessing(robot):
+def automatic_processing(robot):
     #while True:
         #radarScan(robot)
     #pass
@@ -52,7 +54,7 @@ def automaticProcessing(robot):
     if dist < seuil:
         robot.motor.smooth_speed(0)
         print(dist, "cm")
-        radarScan(robot)
+        radar_scan(robot)
         if robot.result:
             dist_max = max([item[0] for item in robot.result])
             angle_max = max([item[1] for item in robot.result if item[0] == dist_max])
@@ -62,3 +64,14 @@ def automaticProcessing(robot):
             print(" Aucun espace dégagé détecté.")
     robot.motor.smooth_speed(vitesse)
 
+def dist_redress(robot):
+        mark = 0
+        distValue = robot.ultra.get_distance_cm()
+        while True:
+            distValue = robot.ultra.get_distance_cm()
+            if distValue > 900:
+                mark += 1
+            elif mark > 5 or distValue < 900:
+                break
+            print(distValue)
+        return round(distValue, 2)
