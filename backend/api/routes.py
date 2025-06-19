@@ -188,7 +188,7 @@ def handle_stop_line_tracking():
 
 
 @socketio.on('connect', namespace="/video_stream")
-def handle_video_stream_connect(socket):
+def handle_video_stream_connect():
     def video_stream():
         """Generates video frames for the video stream."""
         while True:

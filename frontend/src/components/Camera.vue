@@ -52,11 +52,12 @@ let canvaElement = useTemplateRef("canva");
 
 import { io } from "socket.io-client";
 
-const socket = io.connect(import.meta.env.VITE_ROBOT_BASE_URL);
+const socket = io.connect(import.meta.env.VITE_ROBOT_BASE_URL+"/video_stream");
 onMounted(() => {
   var context2d = canvaElement.value.getContext("2d");
 
-  socket.of("/video_stream").on("video", function(frame){
+  socket.on("video", function(frame){
+    console.log("Received frame", frame);
     context2d.putImageData(frame, 0, 0);
   })
 });
