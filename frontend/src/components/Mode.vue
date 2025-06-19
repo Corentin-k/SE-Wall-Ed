@@ -2,11 +2,11 @@
   <div class="settings">
     <h2>Mode</h2>
 
-    <button @click="activePolice">Police Mode</button>
+    <button @click="activatePolice">Police Mode</button>
     <button @click="toggleLineTracking">
       {{ lineTrackingActive ? "Stop Line Tracking" : "Start Line Tracking" }}
     </button>
-    <button @click="automaticProcessing">
+    <button @click="toggleAutomaticProcessing">
       {{
         automaticProcessingActive
           ? "Stop Automatic Processing"
@@ -21,21 +21,21 @@ import { onMounted, onUnmounted, ref } from "vue";
 import { io, Socket } from "socket.io-client";
 import axios from "axios";
 
-const lineTrackingActive = ref<boolean>(false);
-const automaticProcessingActive = ref<boolean>(false);
+const lineTrackingActive = ref(false);
+const automaticProcessingActive = ref(false);
 const socket: Socket = io(import.meta.env.VITE_ROBOT_BASE_URL);
+
 onMounted(() => {
-  // Connect to the Socket.IO server when the component is mounted
   socket.on("connect", () => {
     console.log("Connected to Socket.IO server!");
   });
 
   socket.on("disconnect", () => {
     console.log("Disconnected from Socket.IO server.");
-    lineTrackingActive.value = false; // Reset state on disconnect
+    lineTrackingActive.value = false;
   });
 
-  // Listen for line tracking status updates from the backend
+  // Line tracking updates
   socket.on(
     "line_tracking_status",
     (data: { message: string; active: boolean }) => {
@@ -43,49 +43,36 @@ onMounted(() => {
       lineTrackingActive.value = data.active;
     }
   );
-
-  socket.on("error", (data: { error: string }) => {
-    console.error("Socket.IO Error:", data.error);
-    alert(`Error from robot: ${data.error}`);
-  });
 });
 
 onUnmounted(() => {
-  // Disconnect from the Socket.IO server when the component is unmounted
-  if (socket) {
-    socket.disconnect();
-  }
+  socket.disconnect();
 });
 
-async function automaticProcessing() {
+async function toggleAutomaticProcessing() {
   try {
-    if (automaticProcessingActive.value) {
-      const response = await axios.post(
-        `${import.meta.env.VITE_ROBOT_BASE_URL}/mode/automatic_processing`,
-        {
-          mode: "stop",
-        }
-      );
+    const mode = automaticProcessingActive.value ? "stop" : "start";
+    if (mode === "stop") {
       automaticProcessingActive.value = false;
-      console.log(response.data.message);
     } else {
-      const response = await axios.post(
-        `${import.meta.env.VITE_ROBOT_BASE_URL}/mode/automatic_processing`,
-        {
-          mode: "start",
-        }
-      );
       automaticProcessingActive.value = true;
-      console.log(response.data.message);
     }
+    const res = await axios.post(
+      `${import.meta.env.VITE_ROBOT_BASE_URL}/mode/automatic_processing`,
+      { mode }
+    );
+    console.log(res.data.message);
   } catch (error: any) {
     console.error(error.response?.data || error.message);
   }
 }
-async function activePolice() {
+
+async function activatePolice() {
   try {
-    const response = await axios.post(`${import.meta.env.VITE_ROBOT_BASE_URL}/mode/police`);
-    console.log(response.data.message);
+    const res = await axios.post(
+      `${import.meta.env.VITE_ROBOT_BASE_URL}/mode/police`
+    );
+    console.log(res.data.message);
   } catch (error: any) {
     console.error(
       "Error activating police mode:",
@@ -93,13 +80,11 @@ async function activePolice() {
     );
   }
 }
-// Function to toggle Line Tracking
+
 async function toggleLineTracking() {
   if (lineTrackingActive.value) {
-    // If active, send stop command
     socket.emit("stop_line_tracking");
   } else {
-    // If inactive, send start command
     socket.emit("start_line_tracking");
   }
 }
@@ -116,16 +101,6 @@ async function toggleLineTracking() {
   padding: 2rem;
   max-width: 350px;
   margin: 2rem auto;
-  color: #e0e0e0;
-}
-
-input[type="number"] {
-  width: 100%;
-  padding: 0.5rem;
-  margin: 1rem 0;
-  border-radius: 4px;
-  border: 1px solid #444;
-  background: #2a2a2a;
   color: #e0e0e0;
 }
 

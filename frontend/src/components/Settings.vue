@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="settings">
     <h2>Settings</h2>
     <p>Set speed</p>
@@ -18,9 +18,12 @@ const speed = ref<number>(50);
 async function updateSpeed() {
   try {
     // on envoie la valeur du ref directement
-    const response = await axios.post("http://localhost:5000/motor/speed", {
-      speed: speed.value,
-    });
+    const response = await axios.post(
+      `${import.meta.env.VITE_ROBOT_BASE_URL}/robot/speed`,
+      {
+        speed: speed.value,
+      }
+    );
     console.log(response.data.message);
   } catch (error: any) {
     console.error(

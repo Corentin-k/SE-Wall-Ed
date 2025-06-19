@@ -2,6 +2,7 @@
 from flask_socketio import SocketIO, emit
 from . import socketio
 from sensors import Camera
+import base64
 import time
 robot_routes = Blueprint('robot_routes', __name__)
 robot = None
@@ -27,7 +28,7 @@ def set_led_color_route():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+# ------------------Root Settings -------------------------------
 @robot_routes.route('/set_speed', methods=['POST'])
 def set_speed_route():
     data = request.get_json() or {}
@@ -55,6 +56,7 @@ def set_mode_police():
         msg = "Mode police désactivé"
     return jsonify({"message": msg, "police_on": police_on})
 
+
 @robot_routes.route('/mode/automatic_processing', methods=['POST'])
 def set_mode_automatic_processing():
     data = request.get_json() or {}
@@ -64,9 +66,11 @@ def set_mode_automatic_processing():
         return jsonify({"message": "Mode traitement automatique démarré"})
     elif mode == "stop":
         robot.stop_robot()
+        robot.init_servo_head()
         return jsonify({"message": "Mode traitement automatique arrêté"})
     else:
         return jsonify({"error": "Mode non reconnu"}), 400
+
 
 # ---------------Camera Streaming---------------------------------------
 #@robot_routes.route('/camera')
@@ -145,12 +149,12 @@ def handle_stop_servo():
 
 @socketio.on('connect')
 def handle_connect():
-    print('Client connected')
+    #print('Client connected')
     emit('message', {'data': 'Connected'})
 
 @socketio.on('message')
 def handle_message(data):
-    print('Received message:', data)
+    #print('Received message:', data)
     emit('message', {'data': 'Message received'})
 
 # --- NEW: Line Tracking WebSocket Events ---
@@ -181,3 +185,20 @@ def handle_stop_line_tracking():
             emit('error', {"error": f"Failed to stop line tracking: {str(e)}"})
     else:
         emit('error', {"error": "Robot instance not set."})
+
+
+@socketio.on('connect', namespace="/video_stream")
+def handle_video_stream_connect(socket):
+    def video_stream():
+        """Generates video frames for the video stream."""
+        while True:
+            frame = robot.get_camera_frame()
+            if not frame:
+                time.sleep(0.01)
+                continue
+            stringData = base64.b64encode(imgencode).decode('utf-8')
+            b64_src = 'data:image/jpeg;base64,'
+            stringData = b64_src + stringData
+            yield stringData
+            time.sleep(1/30)
+    emit('video', video_stream(), namespace="/video_stream", broadcast=True)

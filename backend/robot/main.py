@@ -18,27 +18,18 @@ class Robot:
         self.ultra = UltrasonicSensor()
         self.speed = 50
         self.init_servo_head()
+
         self.init_movement()
+        
         self.init_leds()
+        
         self.buzzer = Buzzer()
+        
         self.line_tracker = LineTracker(
             pin_left=line_pin_left,
             pin_middle=line_pin_middle,
             pin_right=line_pin_right
         )
-        # Variables pour le pilotage de la tête
-        self._pan = 0
-        self._tilt = 0
-        self._head_running = True
-        self._head_lock = threading.Lock()
-
-        # Centrage initial de la tête
-        self.move_head(0, 0)
-
-        # Lancement du thread de mouvement de la tête
-        self._head_thread = threading.Thread(target=self._head_loop, daemon=True)
-        self._head_thread.start()
-
         #Utils variables for line tracking
         self._previous_middle = 0
 
@@ -47,8 +38,25 @@ class Robot:
     # -------------------- Initialisation des composants -------------------
 
     def init_servo_head(self):
+        """
+        Initialise les deux servomoteurs de la tête
+	"""
         self.pan_servo = ServoMotors(channel=PAN_CHANNEL, initial_angle=90, step_size=2)
         self.tilt_servo = ServoMotors(channel=TILT_CHANNEL, initial_angle=90, step_size=2)
+
+        # Variables pour le pilotage de la tête
+        self._pan = 0
+        self._tilt = 0
+        self._head_running = True
+        self._head_lock = threading.Lock()
+        self.result = []
+
+        # Centrage initial de la tête
+        self.move_head(0, 0)
+
+        # Lancement du thread de mouvement de la tête
+        self._head_thread = threading.Thread(target=self._head_loop, daemon=True)
+        self._head_thread.start()
 
     def init_movement(self):
         """
@@ -137,7 +145,7 @@ class Robot:
         self.ws2812.stop()
         self.leds.stop_police()
 
-    def shutdown_robot(self): # Note: There are two shutdown methods. This one will override the first.
+    def shutdown_robot(self):
         """
         Nettoie les ressources du robot.
         """
@@ -150,31 +158,27 @@ class Robot:
         self.leds.destroy()
 
     def radarScan(self):
-        pwm0_min = -90
-        pwm0_max = 90
-
+        pwm0_min = 0
+        pwm0_max = 180
         scan_speed = 1
         result = []
-        pwm0_pos = pwm0_max
-        self.motor_servomotor.set_angle(0) # Assuming this means set angle for a specific servo or axis
-        time.sleep(0.8)
-        while pwm0_pos > pwm0_min:
-            pwm0_pos -= scan_speed
-            self.motor_servomotor.set_angle(1, pwm0_pos) # Assuming this means set angle for a specific servo or axis
+        self.motor_servomotor.set_angle(pwm0_min) 
+        while pwm0_min < pwm0_max:
+            self.motor_servomotor.set_angle(pwm0_min + scan_speed) 
             dist = self.ultra.get_distance_cm()
             if dist > 20:
                 continue
-            theta = 90 - pwm0_pos
-            result.append([dist, theta])
+            pwm0_min = pwm0_min + scan_speed
+            result.append([dist, pwm0_min])
             time.sleep(0.02)
-        self.motor_servomotor.set_angle(0) # Corrected from self.motor_servomotor.self(1, 0) - assuming it resets an angle
+        self.motor_servomotor.set_angle(90) 
         return result
 
     def distRedress(self):
         mark = 0
         distValue = self.ultra.get_distance_cm()
         while True:
-            distValue = self.ultra.get_distance_cm() # Corrected from ultra.checkdist() assuming ultra is self.ultra
+            distValue = self.ultra.get_distance_cm()
             if distValue > 900:
                 mark += 1
             elif mark > 5 or distValue < 900:
@@ -274,4 +278,5 @@ class Robot:
         time.sleep(0.5)
 
     def start_automaticProcessing(self):
-        automaticProcessing(self)
+        while True:
+            automaticProcessing(self)
