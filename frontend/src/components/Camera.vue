@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-const streamUrl = 'http://10.3.208.73:5000/camera';
+const streamUrl = import.meta.env.VITE_ROBOT_BASE_URL+'/camera';
 </script>
 
 <style scoped>

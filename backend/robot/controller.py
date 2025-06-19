@@ -1,55 +1,53 @@
-﻿from sensors.motor2 import Motor
-from sensors import *
+﻿from sensors import *
 from robot.config import *
+import time
+def map_range(x, in_min, in_max, out_min, out_max):
+    return (x - in_min) / (in_max - in_min) * (out_max - out_min) + out_min
 
-motor = Motor()
+def radarScan(robot):
+    pwm0_min = 0
+    pwm0_max = 180
 
-def set_motor_speed(speed):
-    motor.set_speed(speed)
-    return f"Speed set to {speed}"
+    scan_speed = 1
+    result = []
+    pwm0_pos = pwm0_max
+    robot.pan_servo.set_angle(pwm0_pos)
+    time.sleep(0.8)
+    while pwm0_pos > pwm0_min:
+        pwm0_pos -= scan_speed
+        robot.pan_servo.set_angle(pwm0_pos)
+        dist = robot.ultra.get_distance_cm()
+        result.append([dist, pwm0_pos])
+        time.sleep(0.5)
+    robot.pan_servo.set_angle(92)
+    print(result)
+    return result
 
-def stop_motor():
-    motor.stop()
-    return "Motor stopped"
+def automaticProcessing(robot):
+    print('automaticProcessing')
+    robot.stop_robot()
+    seuil= 30
+    vitesse = 40
+    try: 
+        while True:
+        
+            dist = robot.ultra.get_distance_cm()
+            if dist < seuil:
+                robot.motor.smooth_speed(0)
+                print(dist, "cm")
+            else:
+                robot.motor.smooth_speed(vitesse)
+                scans = radarScan(robot)
+                if not scans: #pas d'esapce
+                    robot.motor.smooth_speed(-vitesse)
+                    time.sleep(0.5)
+                    robot.motor.smooth_speed(0)
+                    continue
+                angle_max, dist_max = max(scans, key=lambda x: x[1]) # Trouve la distance maximale
+                robot.motor_servomotor.set_angle(mapped)
+                robot.motor.smooth_speed(vitesse)
 
 
-   def automaticProcessing(self):
-		print('automaticProcessing')
-		dist = self.distRedress()
-		print(dist, "cm")
-		if dist >= 50:			# More than 50CM, go straight.
-            self.motor_servomotor.set_angle(0,0)
-			time.sleep(0.3)
-            self.motor.smooth_speed(40)
-			print("Forward")
-		# More than 30cm and less than 50cm, detect the distance between the left and right sides.
-		elif dist > 30 and dist < 50:
-            self.motor.smooth_speed(0)
-            self.motor_servomotor.set_angle(1, -40)
-			time.sleep(0.4)
-			distLeft = self.distRedress()
-			self.scanList[0] = distLeft
-
-			# Go in the direction where the detection distance is greater.
-            self.motor_servomotor.set_angle(1, 40)
-			time.sleep(0.4)
-			distRight = self.distRedress()
-			self.scanList[1] = distRight
-			print(self.scanList)
-            self.motor_servomotor.set_angle(1, 0)
-			if self.scanList[0] >= self.scanList[1]:
-                self.motor_servomotor.set_angle(0, -30)
-				time.sleep(0.3)
-                self.motor.smooth_speed(40)
-				print("Left")
-			else:
-                self.motor_servomotor.set_angle(0, 30)
-				time.sleep(0.3)
-                self.motor.smooth_speed(40, 1)
-				print("Right")
-		else:		# The distance is less than 30cm, back.
-            self.motor_servomotor.set_angle(0, 0)
-			time.sleep(0.3)
-            self.motor.smooth_speed(-40)
-			print("Back")
-		time.sleep(0.4)
+            time.sleep(0.1)
+    finally:
+        robot.motor.smooth_speed(0)

@@ -14,7 +14,7 @@ app = create_app(robot)
 
 def shutdown_handler(signum=None, frame=None):
     try:
-        robot.shutdown()
+        robot.shutdown_robot()
     except Exception as e:
         print(f"Erreur lors du shutdown: {e}")
     sys.exit(0)
@@ -22,7 +22,7 @@ def shutdown_handler(signum=None, frame=None):
 # On passe la fonction SANS les parenthèses
 signal.signal(signal.SIGINT, shutdown_handler)
 signal.signal(signal.SIGTERM, shutdown_handler)
-atexit.register(robot.shutdown)
+atexit.register(robot.shutdown_robot)
 
 if __name__ == "__main__":
     try:

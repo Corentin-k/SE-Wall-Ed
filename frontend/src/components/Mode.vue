@@ -23,8 +23,7 @@ import axios from "axios";
 
 const lineTrackingActive = ref<boolean>(false);
 const automaticProcessingActive = ref<boolean>(false);
-const ROBOT_BASE_URL = "http://10.3.208.73:5000";
-const socket: Socket = io(ROBOT_BASE_URL);
+const socket: Socket = io(import.meta.env.VITE_ROBOT_BASE_URL);
 onMounted(() => {
   // Connect to the Socket.IO server when the component is mounted
   socket.on("connect", () => {
@@ -62,7 +61,7 @@ async function automaticProcessing() {
   try {
     if (automaticProcessingActive.value) {
       const response = await axios.post(
-        `${ROBOT_BASE_URL}/mode/automatic_processing`,
+        `${import.meta.env.VITE_ROBOT_BASE_URL}/mode/automatic_processing`,
         {
           mode: "stop",
         }
@@ -71,7 +70,7 @@ async function automaticProcessing() {
       console.log(response.data.message);
     } else {
       const response = await axios.post(
-        `${ROBOT_BASE_URL}/mode/automatic_processing`,
+        `${import.meta.env.VITE_ROBOT_BASE_URL}/mode/automatic_processing`,
         {
           mode: "start",
         }
@@ -85,7 +84,7 @@ async function automaticProcessing() {
 }
 async function activePolice() {
   try {
-    const response = await axios.post(`${ROBOT_BASE_URL}/mode/police`);
+    const response = await axios.post(`${import.meta.env.VITE_ROBOT_BASE_URL}/mode/police`);
     console.log(response.data.message);
   } catch (error: any) {
     console.error(

@@ -19,6 +19,7 @@ class WS2812LED(threading.Thread):
         super(WS2812LED, self).__init__(*args, **kwargs)
         self.__flag = threading.Event()
         self.__flag.clear()
+        self._stop_event = threading.Event()
     def led_begin(self, bus = 0, device = 0):
         self.bus = bus
         self.device = device
@@ -57,9 +58,12 @@ class WS2812LED(threading.Thread):
     
     def led_close(self):
         self.lightMode = 'none'
-        self.set_all_led_rgb([0,0,0])
+        for i in range(self.led_count):
+            self.set_ledpixel(i, 0, 0, 0)
+        if self.spi and self.led_init_state != 0:
+            self.write_ws2812_numpy8()
         self.spi.close()
-    
+        self.led_init_state = 0
     def set_led_count(self, count):
         self.led_count = count
         self.led_color = [0,0,0] * self.led_count
@@ -260,12 +264,13 @@ class WS2812LED(threading.Thread):
             self.breathProcessing()    
     
     def run(self):
-        while 1:
+        while not self._stop_event.is_set():
             self.__flag.wait()
             self.lightChange()
-            pass
-        
-            
+    def stop(self):
+        # Arrêter la boucle et fermer le SPI
+        self._stop_event.set()
+        self.led_close()
     
 if __name__ == '__main__':
     import time

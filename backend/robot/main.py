@@ -4,6 +4,7 @@ import logging
 from sensors import *
 from robot.config import *
 import asyncio
+from robot.controller import *
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class Robot:
         # Initialisation des composants
         self.camera = Camera()
         self.ultra = UltrasonicSensor()
-
+        self.speed = 50
         self.init_servo_head()
         self.init_movement()
         self.init_leds()
@@ -63,7 +64,7 @@ class Robot:
         self.leds = RGBLEDs(Left_R, Left_G, Left_B, Right_R, Right_G, Right_B)
         self.leds.setup()
         self.ws2812 = WS2812LED(8, 255)
-
+        self.ws2812.start()
     # -------------------- Méthodes de contrôle du robot -------------------
 
     def led(self, hex_color):
@@ -126,21 +127,21 @@ class Robot:
         """
         Met le robot en mode police.
         """
-        #self.leds.start_police(interval=0.3)
+        self.leds.start_police(interval=0.3)
         self.ws2812.police()
-        threading.Thread(target=self.buzzer.play_tune, args=("Police",), daemon=True).start()
-
+        threading.Thread(target=self.buzzer.play_tune, args=(None,"Police",), daemon=True).start()
     def stop_police(self):
         # Arrête le buzzer
         self.buzzer.stop()
         self.ws2812.led_close()
+        self.ws2812.stop()
         self.leds.stop_police()
 
-    def shutdown(self): # Note: There are two shutdown methods. This one will override the first.
+    def shutdown_robot(self): # Note: There are two shutdown methods. This one will override the first.
         """
         Nettoie les ressources du robot.
         """
-        self.camera.destroy()
+        self.stop_robot()
         self.buzzer.stop()
         self.pan_servo.stop()
         self.tilt_servo.stop()
@@ -259,13 +260,9 @@ class Robot:
                 self.motor.smooth_speed(-robot_speed, acceleration=acceleration_rate) 
             else: 
                 print("NOOOO we lost the line :(")
-                # self.motor.smooth_speed_and_wait(0, acceleration_rate) # stop the robot before going forward
                 self.motor.smooth_speed(-robot_speed, acceleration=acceleration_rate) 
 
         self._previous_middle = middle
-        # Assuming print_status() is a method of the Robot class, otherwise it needs to be defined
-        # self.print_status() 
-        # time.sleep(0.1)
 
     def stop_robot(self):
         """
@@ -276,83 +273,5 @@ class Robot:
         self.motor_servomotor.set_angle(90)
         time.sleep(0.5)
 
-    def automaticProcessing2(self):
-        print('automaticProcessing')
-        self.stop_robot()
-        dist = self.distRedress()
-        print(dist, "cm")
-        if dist >= 50:                  # More than 50CM, go straight.
-            self.motor_servomotor.set_angle(90)
-            time.sleep(0.3)
-            self.motor.smooth_speed(40)
-            print("Forward")
-                # More than 30cm and less than 50cm, detect the distance between the left and right sides.
-        elif dist > 30 and dist < 50:
-            self.motor.smooth_speed(0)
-            self.motor_servomotor.set_angle(0)
-            time.sleep(0.4)
-            distLeft = self.distRedress()
-            self.scanList[0] = distLeft
-
-                        # Go in the direction where the detection distance is greater.
-            self.motor_servomotor.set_angle(130)
-            time.sleep(0.4)
-            distRight = self.distRedress()
-            self.scanList[1] = distRight
-            print(self.scanList)
-            self.motor_servomotor.set_angle(90)
-            if self.scanList[0] >= self.scanList[1]:
-                self.motor_servomotor.set_angle(-30)
-                time.sleep(0.3)
-                self.motor.smooth_speed(40)
-                print("Left")
-            else:
-                self.motor_servomotor.set_angle(120)
-                time.sleep(0.3)
-                self.motor.smooth_speed(40, 1)
-                print("Right")
-        else:           # The distance is less than 30cm, back.
-            self.motor_servomotor.set_angle(90)
-            time.sleep(0.3)
-            self.motor.smooth_speed(-40)
-            print("Back")
-        time.sleep(0.4)
-    def automaticProcessing(self):
-        print('automaticProcessing')
-        self.stop_robot()
-        dist = self.distRedress()
-        print(dist, "cm")
-        if dist >= 50:                  # More than 50CM, go straight.
-            self.motor_servomotor.set_angle(92)
-            self.motor.smooth_speed(40)
-            print("Forward")
-                # More than 30cm and less than 50cm, detect the distance between the left and right sides.
-        elif dist > 30 and dist < 50:
-            self.motor.smooth_speed(0)
-    
-            self.motor_servomotor.set_angle(92)
-
-            self.pan_servo.set_angle(180)
-            time.sleep(0.4)
-            distLeft = self.distRedress()
-            self.scanList[0] = distLeft
-
-                        # Go in the direction where the detection distance is greater.
-            self.pan_servo.set_angle(0)
-            time.sleep(0.4)
-            distRight = self.distRedress()
-            self.scanList[1] = distRight
-            print(self.scanList)
-            if self.scanList[0] >= self.scanList[1]:
-                self.motor_servomotor.set_angle(58)
-                self.motor.smooth_speed(40)
-                print("Left")
-            else:
-                self.motor_servomotor.set_angle(118)
-                self.motor.smooth_speed(40)
-                print("Right")
-        else:           # The distance is less than 30cm, back.
-            self.motor_servomotor.set_angle(92)
-            self.motor.smooth_speed(-40)
-            print("Back")
-        time.sleep(0.4)
+    def start_automaticProcessing(self):
+        automaticProcessing(self)

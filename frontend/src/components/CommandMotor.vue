@@ -3,12 +3,52 @@
     <h2>Command Motor</h2>
     <div class="button-container">
       <div class="row top-row">
-        <button data-key="z" :class="{ active: motorKeys.has('z') }">Z</button>
+        <button
+          data-key="z"
+          :class="{ active: motorKeys.has('z') }"
+          @mousedown="() => handleButtonDown('z')"
+          @mouseup="() => handleButtonUp('z')"
+          @mouseleave="() => handleButtonUp('z')"
+          @touchstart.prevent="() => handleButtonDown('z')"
+          @touchend.prevent="() => handleButtonUp('z')"
+        >
+          Z
+        </button>
       </div>
       <div class="row bottom-row">
-        <button data-key="q" :class="{ active: motorKeys.has('q') }">Q</button>
-        <button data-key="s" :class="{ active: motorKeys.has('s') }">S</button>
-        <button data-key="d" :class="{ active: motorKeys.has('d') }">D</button>
+        <button
+          data-key="q"
+          :class="{ active: motorKeys.has('q') }"
+          @mousedown="() => handleButtonDown('q')"
+          @mouseup="() => handleButtonUp('q')"
+          @mouseleave="() => handleButtonUp('q')"
+          @touchstart.prevent="() => handleButtonDown('q')"
+          @touchend.prevent="() => handleButtonUp('q')"
+        >
+          Q
+        </button>
+        <button
+          data-key="s"
+          :class="{ active: motorKeys.has('s') }"
+          @mousedown="() => handleButtonDown('s')"
+          @mouseup="() => handleButtonUp('s')"
+          @mouseleave="() => handleButtonUp('s')"
+          @touchstart.prevent="() => handleButtonDown('s')"
+          @touchend.prevent="() => handleButtonUp('s')"
+        >
+          S
+        </button>
+        <button
+          data-key="d"
+          :class="{ active: motorKeys.has('d') }"
+          @mousedown="() => handleButtonDown('d')"
+          @mouseup="() => handleButtonUp('d')"
+          @mouseleave="() => handleButtonUp('d')"
+          @touchstart.prevent="() => handleButtonDown('d')"
+          @touchend.prevent="() => handleButtonUp('d')"
+        >
+          D
+        </button>
       </div>
     </div>
   </div>
@@ -18,43 +58,48 @@
 import { reactive, onMounted, onBeforeUnmount } from "vue";
 import { io } from "socket.io-client";
 
-const socket = io.connect('http://10.3.208.73:5000');
+const socket = io.connect(import.meta.env.VITE_ROBOT_BASE_URL);
 
 // Handle connection errors
-socket.on('connect_error', (error) => {
-  console.error('Connection error:', error);
+socket.on("connect_error", (error) => {
+  console.error("Connection error:", error);
 });
 
 // Handle disconnection
-socket.on('disconnect', () => {
-  console.log('Disconnected from server');
+socket.on("disconnect", () => {
+  console.log("Disconnected from server");
 });
-
 
 // Set réactif pour suivre les touches moteur enfoncées
 const motorKeys = reactive(new Set());
 
 function sendMotor() {
   if (motorKeys.has("z")) {
-    socket.emit('motor_move', {speed: 100})
-  }
-  else if (motorKeys.has("s")) {
-    socket.emit('motor_move', {speed: -100})
-  }
-  else {
-    socket.emit('motor_move', {speed: 0})
+    socket.emit("motor_move", { speed: 100 });
+  } else if (motorKeys.has("s")) {
+    socket.emit("motor_move", { speed: -100 });
+  } else {
+    socket.emit("motor_move", { speed: 0 });
   }
 
   if (motorKeys.has("d")) {
-    socket.emit('turn_wheel', {direction: "right"})
+    socket.emit("turn_wheel", { direction: "right" });
+  } else if (motorKeys.has("q")) {
+    socket.emit("turn_wheel", { direction: "left" });
+  } else {
+    socket.emit("turn_wheel", { direction: "forward" });
   }
-  else if (motorKeys.has("q")) {
-    socket.emit('turn_wheel', {direction: "left"})
-  }
-  else{
-    socket.emit('turn_wheel', {direction: "forward"})
-  }
+}
+function handleButtonDown(key) {
+  if (!["z", "q", "s", "d"].includes(key) || motorKeys.has(key)) return;
+  motorKeys.add(key);
+  sendMotor();
+}
 
+function handleButtonUp(key) {
+  if (!motorKeys.has(key)) return;
+  motorKeys.delete(key);
+  sendMotor();
 }
 
 function onMotorKeyDown(e) {

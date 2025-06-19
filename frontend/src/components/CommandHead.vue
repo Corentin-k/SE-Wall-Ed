@@ -3,12 +3,52 @@
     <h2>Command Head</h2>
     <div class="button-container">
       <div class="row top-row">
-        <button data-key="i" :class="{ active: headKeys.has('i') }">I</button>
+        <button
+          data-key="i"
+          :class="{ active: headKeys.has('i') }"
+          @mousedown="() => handleButtonDown('i')"
+          @mouseup="() => handleButtonUp('i')"
+          @mouseleave="() => handleButtonUp('i')"
+          @touchstart.prevent="() => handleButtonDown('i')"
+          @touchend.prevent="() => handleButtonUp('i')"
+        >
+          I
+        </button>
       </div>
       <div class="row bottom-row">
-        <button data-key="j" :class="{ active: headKeys.has('j') }">J</button>
-        <button data-key="k" :class="{ active: headKeys.has('k') }">K</button>
-        <button data-key="l" :class="{ active: headKeys.has('l') }">L</button>
+        <button
+          data-key="j"
+          :class="{ active: headKeys.has('j') }"
+          @mousedown="() => handleButtonDown('j')"
+          @mouseup="() => handleButtonUp('j')"
+          @mouseleave="() => handleButtonUp('j')"
+          @touchstart.prevent="() => handleButtonDown('j')"
+          @touchend.prevent="() => handleButtonUp('j')"
+        >
+          J
+        </button>
+        <button
+          data-key="k"
+          :class="{ active: headKeys.has('k') }"
+          @mousedown="() => handleButtonDown('k')"
+          @mouseup="() => handleButtonUp('k')"
+          @mouseleave="() => handleButtonUp('k')"
+          @touchstart.prevent="() => handleButtonDown('k')"
+          @touchend.prevent="() => handleButtonUp('k')"
+        >
+          K
+        </button>
+        <button
+          data-key="l"
+          :class="{ active: headKeys.has('l') }"
+          @mousedown="() => handleButtonDown('l')"
+          @mouseup="() => handleButtonUp('l')"
+          @mouseleave="() => handleButtonUp('l')"
+          @touchstart.prevent="() => handleButtonDown('l')"
+          @touchend.prevent="() => handleButtonUp('l')"
+        >
+          L
+        </button>
       </div>
     </div>
   </div>
@@ -18,16 +58,16 @@
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { io } from "socket.io-client";
 
-const socket = io.connect('http://10.3.208.73:5000');
+const socket = io.connect(import.meta.env.VITE_ROBOT_BASE_URL);
 
 // Handle connection errors
-socket.on('connect_error', (error) => {
-  console.error('Connection error:', error);
+socket.on("connect_error", (error) => {
+  console.error("Connection error:", error);
 });
 
 // Handle disconnection
-socket.on('disconnect', () => {
-  console.log('Disconnected from server');
+socket.on("disconnect", () => {
+  console.log("Disconnected from server");
 });
 
 const headKeys = ref(new Set());
@@ -44,13 +84,13 @@ async function sendCombinedHeadCommand() {
 
   console.log("pan=", pan, "tilt=", tilt);
 
-  const url = "http://10.3.208.73:5000/servo";
+  const url = "http://localhost:5000/servo";
   if (pan === 0 && tilt === 0) {
     //await axios.post(`${url}/stop`);
-    socket.emit('stop_head');
+    socket.emit("stop_head");
   } else {
     //await axios.post(`${url}/start`, { pan, tilt });
-    socket.emit('move_head', { pan, tilt });
+    socket.emit("move_head", { pan, tilt });
   }
 }
 
@@ -68,6 +108,34 @@ function onKeyUp(e) {
   if (headKeys.value.delete(k)) {
     sendCombinedHeadCommand();
   }
+}
+
+function handleButtonDown(key) {
+  if (!["i", "j", "k", "l"].includes(key) || headKeys.value.has(key)) return;
+  headKeys.value.add(key);
+  sendCombinedHeadCommand();
+}
+
+function handleButtonUp(key) {
+  if (!headKeys.value.has(key)) return;
+  headKeys.value.delete(key);
+  sendCombinedHeadCommand();
+}
+
+function onHeadKeysKeyDown(e) {
+  const k = e.key.toLowerCase();
+  if (!["i", "j", "k", "l"].includes(k) || headKeys.has(k)) return;
+
+  headKeys.add(k);
+  sendCombinedHeadCommand();
+}
+
+function onHeadKeysKeyUp(e) {
+  const k = e.key.toLowerCase();
+  if (!headKeys.has(k)) return;
+
+  headKeys.delete(k);
+  sendCombinedHeadCommand();
 }
 
 onMounted(() => {
