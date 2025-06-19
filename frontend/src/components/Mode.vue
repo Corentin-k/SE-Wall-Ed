@@ -2,7 +2,10 @@
   <div class="settings">
     <h2>Mode</h2>
 
-    <button @click="activatePolice">Police Mode</button>
+    <button @click="activatePolice">
+      {{ policeActive ? "Arrêter Police Mode" : "Démarrer Police Mode" }}
+    </button>
+
     <button @click="toggleLineTracking">
       {{ lineTrackingActive ? "Stop Line Tracking" : "Start Line Tracking" }}
     </button>
@@ -24,6 +27,7 @@ import axios from "axios";
 const lineTrackingActive = ref(false);
 const automaticProcessingActive = ref(false);
 const socket: Socket = io(import.meta.env.VITE_ROBOT_BASE_URL);
+const policeActive = ref(false);
 
 onMounted(() => {
   socket.on("connect", () => {
@@ -72,6 +76,7 @@ async function activatePolice() {
     const res = await axios.post(
       `${import.meta.env.VITE_ROBOT_BASE_URL}/mode/police`
     );
+    policeActive.value = !policeActive.value;
     console.log(res.data.message);
   } catch (error: any) {
     console.error(

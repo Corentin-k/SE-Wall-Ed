@@ -137,13 +137,13 @@ class Robot:
         Met le robot en mode police.
         """
         self.leds.start_police(interval=0.3)
-        self.ws2812.police()
+        self.ws2812.start_police(interval=0.05)
         threading.Thread(target=self.buzzer.play_tune, args=(None,"Police",), daemon=True).start()
+    
     def stop_police(self):
         # Arrête le buzzer
         self.buzzer.stop()
-        self.ws2812.led_close()
-        self.ws2812.stop()
+        self.ws2812.stop_police()
         self.leds.stop_police()
 
     

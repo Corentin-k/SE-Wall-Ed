@@ -20,6 +20,13 @@ class WS2812LED(threading.Thread):
         self.__flag = threading.Event()
         self.__flag.clear()
         self._stop_event = threading.Event()
+        
+        self._police_stop = None
+        self._police_thread = None
+        super().__init__(daemon=True)
+
+
+
     def led_begin(self, bus = 0, device = 0):
         self.bus = bus
         self.device = device
@@ -271,6 +278,37 @@ class WS2812LED(threading.Thread):
         # Arrêter la boucle et fermer le SPI
         self._stop_event.set()
         self.led_close()
+
+
+
+    def _police_loop(self, interval=0.3):
+        while not self._police_stop.is_set():
+            # flash bleu
+            self.set_all_led_color_data(0, 0, 255); self.show(); time.sleep(interval)
+            self.set_all_led_color_data(0, 0, 0);   self.show(); time.sleep(interval/5)
+            # flash rouge
+            self.set_all_led_color_data(255, 0, 0); self.show(); time.sleep(interval)
+            self.set_all_led_color_data(0, 0, 0);   self.show(); time.sleep(interval/5)
+        # on éteint tout à la fin
+        self.led_close()
+
+    def start_police(self, interval=0.3):
+        if self._police_thread and self._police_thread.is_alive():
+            return  # déjà en mode police
+        self._police_stop = threading.Event()
+        self._police_thread = threading.Thread(
+            target=self._police_loop, 
+            args=(interval,),
+            daemon=True
+        )
+        self._police_thread.start()
+
+    def stop_police(self):
+        if self._police_stop:
+            self._police_stop.set()
+            self._police_thread.join()
+            self._police_stop = None
+            self._police_thread = None
     
 if __name__ == '__main__':
     import time
