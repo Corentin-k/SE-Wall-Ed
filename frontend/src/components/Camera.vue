@@ -3,6 +3,7 @@
     <h2>Camera</h2>
     <!-- <img src="http://10.3.208.73:5000/camera" alt="Video Stream" /> -->
     <canvas ref="canva" width="640" height="480"></canvas>
+    <!-- <img ref="img"/> -->
   </div>
 </template>
 
@@ -11,7 +12,9 @@ import { onMounted, onBeforeUnmount, ref, useTemplateRef } from "vue";
 
 const videoElement = ref<HTMLVideoElement | null>(null);
 let stream: MediaStream | null = null;
-let canvaElement = useTemplateRef("canva");
+let canvas = useTemplateRef("canva");
+const img = new Image();
+// let imgElement = useTemplateRef("img");
 
 // let image = new Image();
 // image.crossOrigin = "Anonymous";
@@ -51,16 +54,47 @@ let canvaElement = useTemplateRef("canva");
 // });
 
 import { io } from "socket.io-client";
-
-const socket = io.connect(import.meta.env.VITE_ROBOT_BASE_URL+"/video_stream");
+let isRendering = false;
+let latestFrame: string | null = null;
+let image_count = 0;
+let start_time = 0;
 onMounted(() => {
-  var context2d = canvaElement.value.getContext("2d");
+  const socket = io.connect(import.meta.env.VITE_ROBOT_BASE_URL+"/video_stream");
+  var context2d = canvas.value.getContext("2d");
 
-  socket.on("video", function(frame){
-    console.log("Received frame", frame);
-    context2d.putImageData(frame, 0, 0);
-  })
+  socket.on("video", (frame: string) => {
+    // Save the latest frame but don't decode immediately
+    latestFrame = frame;
+
+    // If we're not rendering anything, start decoding
+    if (!isRendering) {
+      drawLatestFrame();
+    }
+  });
+
+  const drawLatestFrame = () => {
+    if (!latestFrame) return;
+
+    isRendering = true;
+    img.src = latestFrame;
+    latestFrame = null;
+
+    img.onload = () => {
+      if (canvas.value) {
+        context2d.drawImage(img, 0, 0, canvas.value.width, canvas.value.height);
+      }
+
+      isRendering = false;
+
+      // If a newer frame came in while we were rendering, draw it
+      if (latestFrame) {
+        drawLatestFrame();
+      }
+    };
+  };
 });
+
+
 
 </script>
 
@@ -82,7 +116,7 @@ img {
   border-radius: 10px;
 }
 
-canva {
+canvas {
   border: 2px solid #bb86fc;
   border-radius: 10px;
 }

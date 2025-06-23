@@ -23,9 +23,9 @@ def run_line_tracking_loop(robot):
     Boucle interne pour exécuter le traitement de suivi de ligne.
     """
     while robot._line_tracking_running:
-        robot.trackLineProcessing()
+        track_line_processing(robot)
 
-def stop_line_tracking(robot):
+def desactivate_line_tracking(robot):
     """
     Désactive le mode de suivi de ligne du robot.
     """
@@ -34,7 +34,9 @@ def stop_line_tracking(robot):
         robot._line_tracking_thread.join()
     robot.stop_robot()
 
-def track_Line_processing(robot):
+def track_line_processing(robot):
+    if not robot._line_tracking_running:
+        return
     status = robot.line_tracker.read_sensors()
     left = status['left']
     middle = status['middle']

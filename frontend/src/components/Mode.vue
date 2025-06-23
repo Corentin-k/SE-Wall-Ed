@@ -36,7 +36,6 @@ onMounted(() => {
 
   socket.on("disconnect", () => {
     console.log("Disconnected from Socket.IO server.");
-    lineTrackingActive.value = false;
   });
 
   // Line tracking updates
@@ -44,7 +43,6 @@ onMounted(() => {
     "line_tracking_status",
     (data: { message: string; active: boolean }) => {
       console.log("Line tracking status:", data.message);
-      lineTrackingActive.value = data.active;
     }
   );
 });
@@ -89,8 +87,10 @@ async function activatePolice() {
 async function toggleLineTracking() {
   if (lineTrackingActive.value) {
     socket.emit("stop_line_tracking");
+    lineTrackingActive.value = false;
   } else {
     socket.emit("start_line_tracking");
+    lineTrackingActive.value = true;
   }
 }
 </script>

@@ -4,6 +4,7 @@ from . import socketio
 from sensors import Camera
 import base64
 import time
+import threading
 robot_routes = Blueprint('robot_routes', __name__)
 robot = None
 police_on = False 
@@ -177,28 +178,29 @@ def handle_stop_line_tracking():
     """
     Handles requests from the frontend via WebSocket to stop line tracking.
     """
-    if robot:
-        try:
-            robot.stop_line_tracking()
-            emit('line_tracking_status', {"message": "Line tracking stopped", "active": False})
-        except Exception as e:
-            emit('error', {"error": f"Failed to stop line tracking: {str(e)}"})
-    else:
-        emit('error', {"error": "Robot instance not set."})
+    robot.stop_line_tracking()
 
 
-@socketio.on('connect', namespace="/video_stream")
-def handle_video_stream_connect():
-    def video_stream():
-        """Generates video frames for the video stream."""
-        while True:
-            frame = robot.get_camera_frame()
-            if not frame:
-                time.sleep(0.01)
-                continue
-            stringData = base64.b64encode(imgencode).decode('utf-8')
-            b64_src = 'data:image/jpeg;base64,'
-            stringData = b64_src + stringData
-            yield stringData
-            time.sleep(1/30)
-    emit('video', video_stream(), namespace="/video_stream", broadcast=True)
+def video_stream():
+    """Generates video frames for the video stream."""
+    while True:
+        frame = robot.get_camera_frame()
+        if not frame:
+            time.sleep(0.01)
+            continue
+        stringData = base64.b64encode(frame).decode('utf-8')
+        b64_src = 'data:image/jpeg;base64,'
+        stringData = b64_src + stringData
+        yield stringData
+
+def video_stream_thread():
+    last_time = time.time()
+    for frame in video_stream():  # frame is base64-encoded string
+        socketio.emit('video', frame, namespace='/video_stream')
+        # print("frame sended in ", time.time() - last_time, "ms")
+        time.sleep(1/60)  # Optional: control FPS
+        last_time = time.time()
+
+@socketio.on('connect', namespace='/video_stream')
+def handle_video_stream_connect(auth):  # Accept the 'auth' argument
+    threading.Thread(target=video_stream_thread, daemon=True).start()

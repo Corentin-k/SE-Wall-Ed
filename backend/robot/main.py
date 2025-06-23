@@ -150,12 +150,14 @@ class Robot:
 
 
     def start_automatic_processing(self):
-            while True:
-                automatic_processing(self)
+        self.tilt_servo.set_angle(90)
+        self.pan_servo.set_angle(90)
+        automatic_processing(self)
 
     def start_line_tracking(self):
         activate_line_tracking(self)
-    
+    def stop_line_tracking():
+        desactivate_line_tracking(robot)
 
     
 
