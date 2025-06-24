@@ -119,11 +119,11 @@ def turn_wheel(data):
 
     angle = 0
     if direction == "left":
-        angle = 37
+        angle = 30
     elif direction == "right":
-        angle = -37
+        angle = -30
     
-    angle = map_range(angle, -98, 82, 0, 180)
+    angle = map_range(angle, -92, 82, 0, 180)
     robot.change_direction(angle)
 
 @socketio.on('move_head')
@@ -201,6 +201,6 @@ def video_stream_thread():
         time.sleep(1/60)  # Optional: control FPS
         last_time = time.time()
 
-@socketio.on('connect', namespace='/video_stream')
-def handle_video_stream_connect(auth):  # Accept the 'auth' argument
-    threading.Thread(target=video_stream_thread, daemon=True).start()
+# @socketio.on('connect', namespace='/video_stream')
+# def handle_video_stream_connect(auth):  # Accept the 'auth' argument
+#     threading.Thread(target=video_stream_thread, daemon=True).start()

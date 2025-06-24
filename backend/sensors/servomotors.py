@@ -33,11 +33,11 @@ class ServoMotors:
             angle = 0
         elif angle > 180:
             angle = 180
-        # if self.channel == 0:
-        #     if angle < 73:
-        #         angle = 73
-        #     elif angle > 118:
-        #         angle = 118
+        #if self.channel == 0:
+         #  if angle < 73:
+          #       angle = 73
+           # elif angle > 118:
+            #     angle = 118
         self.current_angle = angle 
         self.servo.angle = angle
 

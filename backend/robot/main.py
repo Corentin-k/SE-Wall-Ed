@@ -5,7 +5,7 @@ from sensors import *
 from robot.config import *
 import asyncio
 
-from robot.controller import *
+from robot.radar_processing import *
 from robot.ligne_tracking_processing import *
 
 logger = logging.getLogger(__name__)
@@ -20,6 +20,8 @@ class Robot:
         self.ultra = UltrasonicSensor()
         self.speed = 50
         self.init_servo_head()
+        self.controller = None
+        self.controller_lock = threading.Lock()
 
         self.init_movement()
         
@@ -32,12 +34,17 @@ class Robot:
             pin_middle=line_pin_middle,
             pin_right=line_pin_right
         )
-        #Utils variables for line tracking
-        self._previous_middle = 0
 
+        self.init_controller_thread()
         logger.info("Robot initialized")
 
     # -------------------- Initialisation des composants -------------------
+    def init_controller_thread(self):
+        """
+        Initialise le thread pour le contrôleur du robot.
+        """
+        self.controller_thread = threading.Thread(target=self.controller_thread, daemon=True)
+        self.controller_thread.start()
 
     def init_servo_head(self):
         """
@@ -146,18 +153,32 @@ class Robot:
         self.ws2812.stop_police()
         self.leds.stop_police()
 
+    def set_controller(self, controller):
+        with self.controller_lock:
+            if self.controller is not None:
+                self.controller.stop()
+            self.controller = controller
+            if self.controller is not None:
+                self.controller.start()
     
-
+    def controller_thread(self):
+        """
+        Thread pour exécuter le contrôleur du robot.
+        """
+        while True:
+            with self.controller_lock:
+                if self.controller is not None:
+                    self.controller.update()
+            time.sleep(1/20)
 
     def start_automatic_processing(self):
-        self.tilt_servo.set_angle(90)
-        self.pan_servo.set_angle(90)
-        automatic_processing(self)
+        self.set_controller(RadarController(self))
 
     def start_line_tracking(self):
-        activate_line_tracking(self)
-    def stop_line_tracking():
-        desactivate_line_tracking(robot)
+        self.set_controller(LineTrackingController(self))
+
+    def stop_line_tracking(self):
+        self.set_controller(None)
 
     
 
