@@ -1,5 +1,7 @@
 ﻿from flask import Blueprint, request, jsonify, Response
 from flask_socketio import SocketIO, emit
+from robot.line_tracking_processing import LineTrackingController
+from robot.radar_processing import RadarController
 
 from . import socketio
 from sensors import Camera
@@ -109,7 +111,7 @@ def turn_wheel(data):
     elif direction == "right":
         angle = -30
     
-    angle = map_range(angle, -92, 82, 0, 180)
+    angle = map_range(angle, -103, 77, 0, 180)
     robot.change_direction(angle)
 
 @socketio.on('move_head')
@@ -148,20 +150,16 @@ def handle_message(data):
 
 @socketio.on('mode')
 def handle_mode(data):
-    """
-    Handles requests from the frontend via WebSocket to change the robot's mode.
-    """
     mode = data.get('mode', 'default')
     if mode == 'ligne_tracking':
-        from robot.ligne_tracking_processing import LineTrackingController
-        robot.set_controller(LineTrackingController(robot))
-    if mode == 'RadarController':
-        from robot.radar_processing import RadarController
-        robot.set_controller(RadarController(robot))
-    if mode == 'default':
-        robot.set_controller(None)
-
-
+        ctrl = LineTrackingController(robot)
+    elif mode == 'automatic_processing':
+        ctrl = RadarController(robot)
+    else:
+        ctrl = None
+    robot.set_controller(ctrl)
+    emit('mode_status', {'mode': mode, 'active': bool(ctrl),
+                        'message': f"Mode {mode} {'activé' if ctrl else 'arrêté'}"}, broadcast=False)
 
 
 def video_stream():
@@ -187,3 +185,8 @@ def video_stream_thread():
 # @socketio.on('connect', namespace='/video_stream')
 # def handle_video_stream_connect(auth):  # Accept the 'auth' argument
 #     threading.Thread(target=video_stream_thread, daemon=True).start()
+@socketio.on('emergency')
+def handle_emergency(data):
+    active = data.get('active', False)
+    robot.set_emergency_mode(active)
+    emit('emergency', {'active': active}, broadcast=True)

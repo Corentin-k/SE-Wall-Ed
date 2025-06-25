@@ -3,20 +3,19 @@
     <!-- Colonne 1 -->
     <div class="column">
       <Camera />
-      <Lidar />
-      <ColorPicker class="color-picker" />
+     
     </div>
 
     <!-- Colonne 2 -->
      <div class="column">
       <CommandHead />
       <CommandMotor />
-      <Mode />
     </div> 
 
     <!-- Colonne 3 -->
     <div class="column">
-      <Settings />
+      <Mode />
+      <ColorPicker class="color-picker" />
     </div>
   </div>
 </template>

@@ -16,6 +16,13 @@
           : "Start Automatic Processing"
       }}
     </button>
+
+    <button
+    :class="['emergency-btn', { active: emergencyActive }]"
+    @click="toggleEmergency"
+  >
+    {{ emergencyActive ? "Restart" : "Emergency" }}
+  </button>
   </div>
 </template>
 
@@ -29,6 +36,7 @@ const socket: Socket = io(import.meta.env.VITE_ROBOT_BASE_URL);
 const policeActive = ref(false);
 const lineTrackingActive = ref(false);
 const automaticProcessingActive = ref(false);
+const emergencyActive = ref(false);
 
 onMounted(() => {
   socket.on("connect", () => {
@@ -37,6 +45,11 @@ onMounted(() => {
 
   socket.on("disconnect", () => {
     console.log("Disconnected from Socket.IO server.");
+  });
+
+  socket.on("emergency", (data: { active: boolean }) => {
+    console.log("Emergency status:", data);
+    emergencyActive.value = data.active;
   });
 
   // Line tracking updates
@@ -51,6 +64,10 @@ onMounted(() => {
           break;
         case "automatic_processing":
           automaticProcessingActive.value = data.active;
+          break;
+        case "default":
+          lineTrackingActive.value = false;
+          automaticProcessingActive.value = false;
           break;
       }
     }
@@ -76,9 +93,14 @@ async function activatePolice() {
   }
 }
 
+function toggleEmergency() {
+  emergencyActive.value = !emergencyActive.value;
+  socket.emit("emergency", { active: emergencyActive.value });
+}
+
 function toggleAutomaticProcessing() {
   const next = !automaticProcessingActive.value;
-  socket.emit("mode", { mode: next ? "RadarController" : "default" });
+  socket.emit("mode", { mode: next ? "automatic_processing" : "default" });
 }
 
 function toggleLineTracking() {
@@ -116,5 +138,36 @@ button {
 button:focus {
   outline: 3px solid #bb86fc;
   outline-offset: 2px;
+}
+
+
+.emergency-btn {
+  background-color: #d32f2f;       /* rouge vif */
+  color: white;                    /* texte en blanc */
+  border: none;                    /* pas de bordure */
+  padding: 12px 24px;              /* espacement interne généreux */
+  font-size: 1.1rem;               /* taille de police adaptée */
+  font-weight: bold;               /* effet de priorité */
+  border-radius: 4px;              /* coins arrondis */
+  cursor: pointer;                 /* indique qu’on peut cliquer */
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+/* Au survol */
+.emergency-btn:hover {
+  background-color: #b71c1c;
+}
+
+/* Effet "pression" (cliquer dessus) */
+.emergency-btn:active {
+  transform: scale(0.98);
+}
+
+/* Quand l’état d’urgence est actif */
+.emergency-btn.active {
+  background-color: #ff6f00;      /* orange vif pour l’action "Restart" */
+}
+.emergency-btn.active:hover {
+  background-color: #e65a00;
 }
 </style>

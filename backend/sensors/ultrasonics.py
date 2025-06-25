@@ -11,6 +11,15 @@ class UltrasonicSensor:
     def print_distance(self):
         distance = self.get_distance_cm()
         print(f"{distance:.2f} cm")
+    def shutdown(self):
+        try:
+            self.sensor.pause()
+        except Exception:
+            pass
+        try:
+            self.sensor.close()
+        except Exception:
+            pass
 
 
 # Exemple d'utilisation

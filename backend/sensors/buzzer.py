@@ -15,7 +15,21 @@ class Buzzer:
         self.buzzer.stop()
 
     def stop(self):
-        self.buzzer.stop()
+        if self.buzzer:
+            try:
+                self.buzzer.stop()
+            except Exception:
+                pass
+
+    def shutdown(self):
+        # arrête puis ferme la ressource
+        self.stop()
+        if self.buzzer:
+            try:
+                # méthode gpiozero pour libérer la broche
+                self.buzzer.close()
+            finally:
+                self.buzzer = None
 
 
 # Définition de la mélodie

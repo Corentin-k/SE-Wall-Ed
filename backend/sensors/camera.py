@@ -15,6 +15,7 @@ class Camera:
     thread = None
     frame = None
     _stop_event = threading.Event()
+    picam: Picamera2 | None = None
 
     def __init__(self):
         if Camera.thread is None:
@@ -28,14 +29,14 @@ class Camera:
 
     @classmethod
     def _thread(cls):
-        picam = Picamera2()
-        cfg = picam.create_video_configuration(
+        cls.picam = Picamera2()
+        cfg = cls.picam.create_video_configuration(
             main={"size": RESOLUTION, "format": "RGB888"},
             buffer_count=3
         )
         cfg["colour_space"] = libcamera.ColorSpace.Sycc()
-        picam.configure(cfg)
-        picam.start()
+        cls.picam.configure(cfg)
+        cls.picam.start()
 
         encode_params = [
             int(cv2.IMWRITE_JPEG_QUALITY), JPEG_QUALITY,
@@ -46,12 +47,39 @@ class Camera:
 
         try:
             while not cls._stop_event.is_set():
-                img = picam.capture_array()  # RGB888 frame
+                img = cls.picam.capture_array()  # RGB888 frame
                 # encode directly without color conversion
                 ret, buffer = cv2.imencode('.jpg', img, encode_params)
                 if ret:
                     cls.frame = buffer.tobytes()
                 time.sleep(interval)
         finally:
-            picam.stop()
+            cls.picam.stop()
             cls.frame = None
+
+    @classmethod
+    def shutdown(cls):
+        cls._stop_event.set()
+
+        
+        if cls.picam:
+            try:
+                cls.picam.stop()
+            except Exception:
+                pass
+            try:
+                cls.picam.close()
+            except Exception:
+                pass
+            finally:
+                cls.picam = None
+
+        
+        if cls.thread:
+            cls.thread.join(timeout=2.0)
+            cls.thread = None
+
+        
+        cls.frame = None
+        cls._stop_event.clear()
+        print("Camera shutdown complete.")

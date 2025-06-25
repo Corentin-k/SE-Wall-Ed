@@ -30,6 +30,7 @@ class RadarController(Controller):
             self.robot.pan_servo.set_angle(90)
 
     def start(self):
+        
         self.robot.motor_servomotor.set_angle(map_range(0, -98, 82, 0, 180))
         self.robot.tilt_servo.set_angle(90)
         self.robot.pan_servo.set_angle(90)
@@ -60,10 +61,6 @@ class RadarController(Controller):
         self.robot.motor.smooth_speed(vitesse)
         dist = self.robot.ultra.get_distance_cm()
         print(f"Distance frontale : {dist:.1f} cm")
-    
-    def stop(self):
-        self.robot.motor.smooth_speed(0)
-        self.robot.motor_servomotor.set_angle(map_range(0, -98, 82, 0, 180))
 
     def dist_redress(robot):
             mark = 0

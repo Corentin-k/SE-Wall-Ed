@@ -6,7 +6,7 @@ from robot.config import *
 import asyncio
 
 from robot.radar_processing import *
-from robot.ligne_tracking_processing import *
+from robot.line_tracking_processing import *
 
 logger = logging.getLogger(__name__)
 
@@ -24,32 +24,29 @@ class Robot:
         self.controller_lock = threading.Lock()
 
         self.init_movement()
-        
+
         self.init_leds()
-        
+
         self.buzzer = Buzzer()
-        
-        self.line_tracker = LineTracker(
-            pin_left=line_pin_left,
-            pin_middle=line_pin_middle,
-            pin_right=line_pin_right
-        )
+
+        self.line_tracker = None
 
         self.init_controller_thread()
         logger.info("Robot initialized")
+        tests(self)
 
     # -------------------- Initialisation des composants -------------------
     def init_controller_thread(self):
         """
         Initialise le thread pour le contrôleur du robot.
         """
-        self.controller_thread = threading.Thread(target=self.controller_thread, daemon=True)
+        self.controller_thread = threading.Thread(target=self._controller_loop, daemon=True)
         self.controller_thread.start()
 
     def init_servo_head(self):
         """
         Initialise les deux servomoteurs de la tête
-	"""
+        """
         self.pan_servo = ServoMotors(channel=PAN_CHANNEL, initial_angle=90, step_size=2)
         self.tilt_servo = ServoMotors(channel=TILT_CHANNEL, initial_angle=90, step_size=2)
 
@@ -82,6 +79,15 @@ class Robot:
         self.leds.setup()
         self.ws2812 = WS2812LED(8, 255)
         self.ws2812.start()
+    def _controller_loop(self):
+        """
+        Thread pour exécuter le contrôleur du robot.
+        """
+        while True:
+            with self.controller_lock:
+                if self.controller is not None:
+                    self.controller.update()
+            time.sleep(1/20)
     # -------------------- Méthodes de contrôle du robot -------------------
 
     def led(self, hex_color):
@@ -143,10 +149,16 @@ class Robot:
         """
         Met le robot en mode police.
         """
+        if not self.leds:
+            self.init_leds()
+        if not self.ws2812:
+            self.init_leds()
+        if not self.buzzer:
+            self.buzzer = Buzzer()
         self.leds.start_police(interval=0.3)
         self.ws2812.start_police(interval=0.05)
         threading.Thread(target=self.buzzer.play_tune, args=(None,"Police",), daemon=True).start()
-    
+
     def stop_police(self):
         # Arrête le buzzer
         self.buzzer.stop()
@@ -162,15 +174,14 @@ class Robot:
                 self.stop_head()
             self.controller = controller
             if self.controller:
-                self.controller.start()
+                if isinstance(self.controller, LineTrackingController):
+                    self.line_tracker = LineTracker(
+                        pin_left=line_pin_left,
+                        pin_middle=line_pin_middle,
+                        pin_right=line_pin_right
+                    )
+                self.controller.start_controller()
 
-    
-   
-
-   
-        
-
-    
 
     def stop_robot(self):
         """
@@ -181,16 +192,77 @@ class Robot:
         self.motor_servomotor.set_angle(90)
         time.sleep(0.5)
 
-    
+
     def shutdown_robot(self):
-            """
-            Nettoie les ressources du robot.
-            """
+        try:
+            if self.controller:
+                try:
+                    self.set_controller(None)
+                except Exception as e:
+                    logger.warning(f"Erreur arrêt contrôleur : {e}")
+                self.controller = None
+
             self.stop_robot()
             self.shutdown_head()
-            self.buzzer.stop()
-            self.pan_servo.stop()
-            self.tilt_servo.stop()
-            self.motor_servomotor.stop()
-            self.ws2812.led_close()
-            self.leds.destroy()
+
+            if self.buzzer:
+                try:
+                    self.buzzer.shutdown()
+                except Exception as e:
+                    logger.warning(f"Erreur lors de l'arrêt du buzzer : {e}")
+
+            for servo in [self.pan_servo, self.tilt_servo, self.motor_servomotor]:
+                if servo:
+                    try:
+                        servo.stop()
+                    except Exception as e:
+                        logger.warning(f"Erreur arrêt servo : {e}")
+
+            if self.ws2812:
+                try:
+                    self.ws2812.led_close()
+                except Exception as e:
+                    logger.warning(f"Erreur arrêt WS2812 : {e}")
+
+            if self.leds:
+                try:
+                    self.leds.destroy()
+                except Exception as e:
+                    logger.warning(f"Erreur arrêt LEDs : {e}")
+
+            if self.ultra:
+                try:
+                    self.ultra.shutdown()
+                except Exception as e:
+                    logger.warning(f"Erreur arrêt capteur ultra : {e}")
+
+            if self.camera:
+                try:
+                    self.camera.shutdown()
+                except Exception as e:
+                    logger.warning(f"Erreur arrêt caméra : {e}")
+
+            if self.line_tracker:
+                try:
+                    self.line_tracker.destroy()
+                except Exception as e:
+                    logger.warning(f"Erreur arrêt line tracker : {e}")
+
+            logger.info("✔️ Shutdown complet")
+        except Exception as e:
+            logger.error(f"Erreur inattendue pendant le shutdown: {e}")
+
+    def set_emergency_mode(self, active: bool):
+        if active:
+            self.shutdown_robot()
+
+        else:
+            self.__init__()
+
+
+def tests(robot):
+    print("Doing some tests...")
+    result = radar_scan(robot)
+    min_angle, max_angle = result.get_nearest_obstacle_limits()
+    print("nearest obstacle : ", min_angle, max_angle)
+

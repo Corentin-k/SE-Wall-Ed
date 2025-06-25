@@ -54,7 +54,8 @@ class ServoMotors:
         Arrête le servo en le remettant à une position centrale (90 degrés).
         """
         self.set_angle(90)
-
+        #self.servo.set_pulse_width(None)
+        self.pca.channels[self.channel].duty_cycle = 0
 
 def start_servos_control():
    

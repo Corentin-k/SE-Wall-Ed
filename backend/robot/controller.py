@@ -6,19 +6,27 @@ class Controller:
         self._stop_event = threading.Event()
         self._thread = None
     
-    def start(self):
+    def start_controller(self,update_interval: float = 1/20):
         self._stop_event.clear()
-        self._thread = threading.Thread(target=self._run_loop, daemon=True)
+        self._thread = threading.Thread(target=self._run_loop,args=(update_interval,),
+                                         daemon=True)
         self._thread.start()
+        self.start()
+    def start():
+        pass
 
 
-    def _run_loop(self):
+    def _run_loop(self, interval: float):
         while not self._stop_event.is_set():
-            self.update()
-            time.sleep(1/20)   # cadence à 20 Hz
+            try:
+                self.update()
+            except Exception as e:
+                print(f"Erreur dans la boucle du contrôleur : {e}")
+                break
+            time.sleep(interval)
+        self.on_stop()
 
     def update(self):
-        """ À surcharger dans la sous-classe """
         raise NotImplementedError
 
     def stop(self):
@@ -26,6 +34,6 @@ class Controller:
         if self._thread:
             self._thread.join()
         self.on_stop()
-
-    
-
+    def on_stop(self):
+        self.robot.motor.smooth_speed(0)
+        self.robot.motor_servomotor.set_angle(90)

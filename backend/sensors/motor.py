@@ -30,6 +30,7 @@ class Motors:
         pwm_motor.frequency = 50
 
         self.acceleration_rate = 50 # default acceleration rate
+        self.distance = 0
 
         self.motor1 = motor.DCMotor(pwm_motor.channels[MOTOR_M1_IN1],pwm_motor.channels[MOTOR_M1_IN2] )
         self.motor1.decay_mode = (motor.SLOW_DECAY)
@@ -100,8 +101,12 @@ class Motors:
     smooth_step_count = 20 # how many time do we actualise the speed during acceleration
 
     def _smooth_speed_thread(self):
+        last_time = time.time()
         while True:
             current_speed = map_range(self.motor1.throttle, -1, 1, -100, 100)
+            time_diff = time.time() - last_time
+            last_time = time.time()
+            self.distance += current_speed * time_diff  # update distance based on speed and time
             speed_diff = self.motor1_target_speed - current_speed
             if speed_diff != 0:
                 max_diff = self.acceleration_rate / self.smooth_step_count
@@ -124,20 +129,18 @@ class Motors:
     def smooth_speed_and_wait(self, target_speed, acceleration = 50):
         self.smooth_speed(target_speed, acceleration)
         speed_diff = abs(self.motor1_target_speed - map_range(self.motor1.throttle, -1, 1, -100, 100))
-        time.sleep(1 / self.smooth_step_count * abs(speed_diff) / 100)
+        time.sleep(abs(speed_diff) / acceleration)
 
 
 
 def main():
     motors = Motors()
     try:
-        for i in range(10, 25):
-            print("testing speed : ", i * 10)
-            motors.smooth_speed(100, i * 10)
-            time.sleep(3)
-            motors.smooth_speed(-100, i * 10)
-            time.sleep(3)
-        motors.smooth_speed(0)
+        motors.smooth_speed(50)  # Set initial speed
+        while (motors.distance * 0.907367404) < 100:
+            pass
+        motors.set_speed(0)  # Stop the motors
+        print(f"Distance traveled: {(motors.distance * 0.907367404):.2f} units")
     except KeyboardInterrupt:
         motors.set_speed(0)
 
