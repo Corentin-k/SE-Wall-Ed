@@ -63,7 +63,7 @@ class WS2812LED(threading.Thread):
         elif self.bus == 6:
             print("SPI6-MOSI: GPIO20(WS2812-PIN)  SPI6-MISO: GPIO19  SPI6-SCLK: GPIO21  SPI6-CE0: GPIO18  SPI6-CE1: GPIO27")
     
-    def led_close(self):
+    def shutdown(self):
         self.lightMode = 'none'
         for i in range(self.led_count):
             self.set_ledpixel(i, 0, 0, 0)
@@ -71,6 +71,7 @@ class WS2812LED(threading.Thread):
             self.write_ws2812_numpy8()
         self.spi.close()
         self.led_init_state = 0
+
     def set_led_count(self, count):
         self.led_count = count
         self.led_color = [0,0,0] * self.led_count
@@ -278,7 +279,6 @@ class WS2812LED(threading.Thread):
         # Arrêter la boucle et fermer le SPI
         self._stop_event.set()
         self.led_close()
-
 
 
     def _police_loop(self, interval=0.3):

@@ -49,7 +49,7 @@ class ServoMotors:
         new_angle = self.current_angle + (self.step_size * direction)
         self.set_angle(new_angle) 
     
-    def stop(self):
+    def shutdown(self):
         """
         Arrête le servo en le remettant à une position centrale (90 degrés).
         """

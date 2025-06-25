@@ -88,6 +88,7 @@ class Robot:
                 if self.controller is not None:
                     self.controller.update()
             time.sleep(1/20)
+
     # -------------------- Méthodes de contrôle du robot -------------------
 
     def led(self, hex_color):
@@ -192,9 +193,17 @@ class Robot:
         self.motor_servomotor.set_angle(90)
         time.sleep(0.5)
 
+    def set_emergency_mode(self, active: bool):
+            if active:
+                self.shutdown_robot()
+            else:
+                self.__init__()
 
     def shutdown_robot(self):
         try:
+            self.stop_robot()
+            self.shutdown_head()
+
             if self.controller:
                 try:
                     self.set_controller(None)
@@ -202,62 +211,18 @@ class Robot:
                     logger.warning(f"Erreur arrêt contrôleur : {e}")
                 self.controller = None
 
-            self.stop_robot()
-            self.shutdown_head()
-
-            if self.buzzer:
-                try:
-                    self.buzzer.shutdown()
-                except Exception as e:
-                    logger.warning(f"Erreur lors de l'arrêt du buzzer : {e}")
-
-            for servo in [self.pan_servo, self.tilt_servo, self.motor_servomotor]:
-                if servo:
+            for sensor in [self.camera, self.ultra, self.line_tracker, self.buzzer,self.ws2812,self.pan_servo, self.tilt_servo, self.motor_servomotor, self.leds]:
+                if sensor:
                     try:
-                        servo.stop()
+                        sensor.shutdown()
                     except Exception as e:
-                        logger.warning(f"Erreur arrêt servo : {e}")
-
-            if self.ws2812:
-                try:
-                    self.ws2812.led_close()
-                except Exception as e:
-                    logger.warning(f"Erreur arrêt WS2812 : {e}")
-
-            if self.leds:
-                try:
-                    self.leds.destroy()
-                except Exception as e:
-                    logger.warning(f"Erreur arrêt LEDs : {e}")
-
-            if self.ultra:
-                try:
-                    self.ultra.shutdown()
-                except Exception as e:
-                    logger.warning(f"Erreur arrêt capteur ultra : {e}")
-
-            if self.camera:
-                try:
-                    self.camera.shutdown()
-                except Exception as e:
-                    logger.warning(f"Erreur arrêt caméra : {e}")
-
-            if self.line_tracker:
-                try:
-                    self.line_tracker.destroy()
-                except Exception as e:
-                    logger.warning(f"Erreur arrêt line tracker : {e}")
+                        logger.warning(f"Erreur lors de l'arrêt du capteur {sensor.__class__.__name__} : {e}")
 
             logger.info("✔️ Shutdown complet")
         except Exception as e:
             logger.error(f"Erreur inattendue pendant le shutdown: {e}")
 
-    def set_emergency_mode(self, active: bool):
-        if active:
-            self.shutdown_robot()
-
-        else:
-            self.__init__()
+    
 
 
 def tests(robot):

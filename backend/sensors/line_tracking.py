@@ -19,7 +19,7 @@ class LineTracker:
         
         status = self.read_sensors()
         print("left: {left}   middle: {middle}   right: {right}".format(**status))
-    def destroy(self):
+    def shutdown(self):
         self.sensor_left.close()
         self.sensor_middle.close()
         self.sensor_right.close()

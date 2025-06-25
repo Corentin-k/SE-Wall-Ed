@@ -22,11 +22,9 @@ class Buzzer:
                 pass
 
     def shutdown(self):
-        # arrête puis ferme la ressource
         self.stop()
         if self.buzzer:
             try:
-                # méthode gpiozero pour libérer la broche
                 self.buzzer.close()
             finally:
                 self.buzzer = None

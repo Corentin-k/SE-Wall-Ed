@@ -82,7 +82,7 @@ class RGBLEDs:
         self.R_G.value = 1.0
         self.R_B.value = 1.0
 
-    def destroy(self):
+    def shutdown(self):
         self.L_R.close()
         self.L_G.close()
         self.L_B.close()
