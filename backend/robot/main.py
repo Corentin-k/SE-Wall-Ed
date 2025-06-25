@@ -153,32 +153,22 @@ class Robot:
         self.ws2812.stop_police()
         self.leds.stop_police()
 
-    def set_controller(self, controller):
+    def set_controller(self, controller: Controller):
         with self.controller_lock:
-            if self.controller is not None:
+            if self.controller:
                 self.controller.stop()
+                self.motor.smooth_speed(0)
+                self.motor_servomotor.set_angle(90)
+                self.stop_head()
             self.controller = controller
-            if self.controller is not None:
+            if self.controller:
                 self.controller.start()
+
     
-    def controller_thread(self):
-        """
-        Thread pour exécuter le contrôleur du robot.
-        """
-        while True:
-            with self.controller_lock:
-                if self.controller is not None:
-                    self.controller.update()
-            time.sleep(1/20)
+   
 
-    def start_automatic_processing(self):
-        self.set_controller(RadarController(self))
-
-    def start_line_tracking(self):
-        self.set_controller(LineTrackingController(self))
-
-    def stop_line_tracking(self):
-        self.set_controller(None)
+   
+        
 
     
 

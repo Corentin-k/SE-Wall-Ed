@@ -1,5 +1,6 @@
 ﻿from flask import Blueprint, request, jsonify, Response
 from flask_socketio import SocketIO, emit
+
 from . import socketio
 from sensors import Camera
 import base64
@@ -41,7 +42,8 @@ def set_speed_route():
         return jsonify({"message": f"Speed set to {speed}"})
     
     except Exception as e:
-        return jsonify({"error": str(e)}), 500   
+        return jsonify({"error": str(e)}), 500
+    
 # ---------------Root Mode---------------------------------------
 
 @robot_routes.route('/mode/police', methods=['POST'])
@@ -56,22 +58,6 @@ def set_mode_police():
         police_on = False
         msg = "Mode police désactivé"
     return jsonify({"message": msg, "police_on": police_on})
-
-
-@robot_routes.route('/mode/automatic_processing', methods=['POST'])
-def set_mode_automatic_processing():
-    data = request.get_json() or {}
-    mode = data.get("mode", "start")
-    if mode == "start":
-        robot.start_automatic_processing()
-        return jsonify({"message": "Mode traitement automatique démarré"})
-    elif mode == "stop":
-        robot.stop_robot()
-        robot.init_servo_head()
-        return jsonify({"message": "Mode traitement automatique arrêté"})
-    else:
-        return jsonify({"error": "Mode non reconnu"}), 400
-
 
 # ---------------Camera Streaming---------------------------------------
 #@robot_routes.route('/camera')
@@ -159,26 +145,23 @@ def handle_message(data):
     emit('message', {'data': 'Message received'})
 
 # --- NEW: Line Tracking WebSocket Events ---
-@socketio.on('start_line_tracking')
-def handle_start_line_tracking():
-    """
-    Handles requests from the frontend via WebSocket to start line tracking.
-    """
-    if robot:
-        try:
-            robot.start_line_tracking()
-            emit('line_tracking_status', {"message": "Line tracking started", "active": True})
-        except Exception as e:
-            emit('error', {"error": f"Failed to start line tracking: {str(e)}"})
-    else:
-        emit('error', {"error": "Robot instance not set."})
 
-@socketio.on('stop_line_tracking')
-def handle_stop_line_tracking():
+@socketio.on('mode')
+def handle_mode(data):
     """
-    Handles requests from the frontend via WebSocket to stop line tracking.
+    Handles requests from the frontend via WebSocket to change the robot's mode.
     """
-    robot.stop_line_tracking()
+    mode = data.get('mode', 'default')
+    if mode == 'ligne_tracking':
+        from robot.ligne_tracking_processing import LineTrackingController
+        robot.set_controller(LineTrackingController(robot))
+    if mode == 'RadarController':
+        from robot.radar_processing import RadarController
+        robot.set_controller(RadarController(robot))
+    if mode == 'default':
+        robot.set_controller(None)
+
+
 
 
 def video_stream():
