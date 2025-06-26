@@ -11,23 +11,23 @@ class RadarController(Controller):
         super().__init__(robot)
         self.result = []
 
-    def radar_scan(self):
-            pwm0_min = 0
-            pwm0_max = 180
-            scan_speed = 2
-            self.robot.pan_servo.set_angle(pwm0_min) 
-            while pwm0_min < pwm0_max:
-                self.robot.pan_servo.set_angle(pwm0_min + scan_speed) 
-                dist = self.robot.ultra.get_distance_cm()
-                self.result.append([dist, pwm0_min])
-                pwm0_min = pwm0_min + scan_speed
-            pwm0_min = 0
-            while pwm0_max > pwm0_min:
-                self.robot.pan_servo.set_angle(pwm0_max - scan_speed) 
-                dist = self.robot.ultra.get_distance_cm()
-                self.result.append([dist, pwm0_max])
-                pwm0_max = pwm0_max - scan_speed
-            self.robot.pan_servo.set_angle(90)
+    # def radar_scan(self):
+    #         pwm0_min = 0
+    #         pwm0_max = 180
+    #         scan_speed = 2
+    #         self.robot.pan_servo.set_angle(pwm0_min) 
+    #         while pwm0_min < pwm0_max:
+    #             self.robot.pan_servo.set_angle(pwm0_min + scan_speed) 
+    #             dist = self.robot.ultra.get_distance_cm()
+    #             self.result.append([dist, pwm0_min])
+    #             pwm0_min = pwm0_min + scan_speed
+    #         pwm0_min = 0
+    #         while pwm0_max > pwm0_min:
+    #             self.robot.pan_servo.set_angle(pwm0_max - scan_speed) 
+    #             dist = self.robot.ultra.get_distance_cm()
+    #             self.result.append([dist, pwm0_max])
+    #             pwm0_max = pwm0_max - scan_speed
+    #         self.robot.pan_servo.set_angle(90)
 
     def start(self):
         

@@ -31,9 +31,9 @@ class Robot:
 
         self.line_tracker = None
 
-        self.init_controller_thread()
+        # self.init_controller_thread()
         logger.info("Robot initialized")
-        tests(self)
+        # tests(self)
 
     # -------------------- Initialisation des composants -------------------
     def init_controller_thread(self):
@@ -188,7 +188,6 @@ class Robot:
         """
         Arrête les moteurs et réinitialise les servos à leur position centrale.
         """
-        print("Stopping motors and resetting servos...")
         self.motor.smooth_speed(0)
         self.motor_servomotor.set_angle(90)
         time.sleep(0.5)
@@ -208,7 +207,7 @@ class Robot:
                 try:
                     self.set_controller(None)
                 except Exception as e:
-                    logger.warning(f"Erreur arrêt contrôleur : {e}")
+                    print(f"Erreur arrêt contrôleur : {e}")
                 self.controller = None
 
             for sensor in [self.camera, self.ultra, self.line_tracker, self.buzzer,self.ws2812,self.pan_servo, self.tilt_servo, self.motor_servomotor, self.leds]:
@@ -216,11 +215,11 @@ class Robot:
                     try:
                         sensor.shutdown()
                     except Exception as e:
-                        logger.warning(f"Erreur lors de l'arrêt du capteur {sensor.__class__.__name__} : {e}")
+                        print(f"Erreur lors de l'arrêt du capteur {sensor.__class__.__name__} : {e}")
 
-            logger.info("✔️ Shutdown complet")
+            print("✔️ Shutdown complet")
         except Exception as e:
-            logger.error(f"Erreur inattendue pendant le shutdown: {e}")
+            print(f"Erreur inattendue pendant le shutdown: {e}")
 
     
 
@@ -230,4 +229,5 @@ def tests(robot):
     result = radar_scan(robot)
     min_angle, max_angle = result.get_nearest_obstacle_limits()
     print("nearest obstacle : ", min_angle, max_angle)
+    robot.pan_servo.set_angle((min_angle + max_angle) / 2)
 

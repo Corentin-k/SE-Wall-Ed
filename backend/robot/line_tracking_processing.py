@@ -23,7 +23,9 @@ class LineTrackingController(Controller):
          """
          self.robot.move_robot(0)
          self.robot.change_direction(90)
+         self.robot.pan_servo.set_angle(90)
          time.sleep(0.1)
+        #  self.avoid_obstacle()
 
     def update(self):
         status = self.robot.line_tracker.read_sensors()
@@ -74,72 +76,99 @@ class LineTrackingController(Controller):
                 self.robot.motor.smooth_speed(-robot_speed, acceleration=acceleration_rate) 
 
         self._previous_middle = middle
+
+        if self.robot.ultra.get_distance_cm() < 40:
+            print("[Obstacle] Obstacle détecté, changement de mode...")
+            self.robot.motor.smooth_speed_and_wait(0)
+            self.avoid_obstacle()
     
     def on_stop(self):
         super().on_stop()
-        self.robot.line_tracker.destroy()
+        self.robot.line_tracker.shutdown()
 
     def avoid_obstacle(self): #à integrer dans une fonction qui switch entre modes line tracking et mode esquive obstacle
-        seuil_obstacle = 30  # cm
-        trop_proche = 10     # cm
+        seuil_obstacle = 40  # cm
+        trop_proche = 20     # cm
         vitesse = 40
 
         print("[Obstacle] Démarrage du contournement...")
 
         # Étape 1 : roue à gauche, tête tout droit
-        self.motor_servomotor.set_angle(30)  # Tourne les roues à gauche (ajuste selon ton servo)
-        self.pan_servo.set_angle(90)         # Tête vers l’avant
-
+        angle = 30
+        angle = map_range(angle, -103, 77, 0, 180)
+        self.robot.change_direction(angle)  # Tourne les roues à gauche (ajuste selon ton servo)
+        self.robot.pan_servo.set_angle(90)         # Tête vers l’avant
+        time.sleep(0.25) # Attendre que le servo se positionne
+        dist = self.robot.ultra.get_distance_cm()
         # Étape 2 : tant que l’obstacle est devant, avancer et vérifier la proximité
-        while self.ultra.get_distance_cm() < seuil_obstacle:
-            self.motor.smooth_speed(vitesse)
-            dist = self.ultra.get_distance_cm()
+        previous_state = 0
+        state = 0
+        while dist < seuil_obstacle:
             if dist < trop_proche:
+                state = 1
                 print("[Obstacle] Trop proche ! Manœuvre de recul...")
-                self.motor.smooth_speed(-vitesse)
-                time.sleep(0.5)
-                self.motor.smooth_speed(0)
+                if previous_state == 0:
+                    self.robot.motor.smooth_speed_and_wait(0)
+                    angle = -30
+                    angle = map_range(angle, -103, 77, 0, 180)
+                    self.robot.change_direction(angle)  # Tourne les roues à gauche (ajuste selon ton servo)
+                
+                self.robot.motor.smooth_speed(-vitesse)
+            else:
+                state = 0
+                if previous_state == 1:
+                    self.robot.motor.smooth_speed_and_wait(0)
+                    angle = 30
+                    angle = map_range(angle, -103, 77, 0, 180)
+                    self.robot.change_direction(angle)
+                
+                self.robot.motor.smooth_speed(vitesse) 
+            
+            previous_state = state
             time.sleep(0.1)
+            dist = self.robot.ultra.get_distance_cm()
+            print("distance =", dist)
 
-        self.motor.smooth_speed(0)
+        self.robot.motor.smooth_speed_and_wait(0, acceleration=150)  # Stop the robot before proceeding
 
         # Étape 3 : roue droite pour se réaligner
-        self.motor_servomotor.set_angle(90)  # Roues droites
+        angle = 0
+        angle = map_range(angle, -103, 77, 0, 180)
+        self.robot.change_direction(angle)  # Roues droites
 
         # Étape 4 : scan pour détecter l’angle avec la plus grande distance
-       
-        # radarScan(robot)
-        # scan_data = robot.result  # [(angle, distance), ...]
-        # if not scan_data:
-        #     print("[Obstacle] Aucune donnée de scan.")
-        #     return
-
+        result = radar_scan(self.robot)
+        min_angle, max_angle = result.get_nearest_obstacle_limits()
+        print("nearest obstacle : ", min_angle, max_angle)
+        self.robot.pan_servo.set_angle((min_angle + max_angle) / 2)
+        time.sleep(0.25) # Attendre que le servo se positionne
         # Cherche l’angle médian de l’objet (zone avec les distances les plus courtes)
-        # objet_zone = [data for data in scan_data if data[1] < seuil_obstacle]
-        # if not objet_zone:
-        #     print("[Obstacle] Aucun objet trouvé.")
-        #     return
-        Scan = ScanResult
-        angles_min, angle_max = Scan.get_nearest_obstacle_limits()
-        angle_milieu = angle_max - angles_min
-        self.pan_servo.set_angle(angle_milieu)
-
+       
         # Étape 5 : avancer jusqu’à ce que l’obstacle ait disparu du champ de vision
+        obstacle_distance = self.robot.ultra.get_distance_cm() + 5 # On ajoute une marge de sécurité
+        print("going until distance over :", obstacle_distance)
         while True:
-            self.motor.smooth_speed(vitesse)
-            if self.ultra.get_distance_cm() > seuil_obstacle:
+            self.robot.motor.smooth_speed(vitesse)
+            distance = self.robot.ultra.get_distance_cm()
+            print("distance =", dist)
+            if distance > obstacle_distance:
                 break
             time.sleep(0.1)
 
-        self.motor.smooth_speed(0)
+        self.robot.motor.smooth_speed(0)
 
         # Étape 6 : tourner à droite pour revenir vers l’axe de la ligne
-        self.motor_servomotor.set_angle(150)  # Tourne à droite
-        self.motor.smooth_speed(vitesse)
-        time.sleep(0.6)  # durée à ajuster selon l’environnement
+        angle = -15
+        angle = map_range(angle, -103, 77, 0, 180)
+        self.robot.change_direction(angle)  # Tourne à droite
+        self.robot.motor.smooth_speed(vitesse)
+        time.sleep(2)  # durée à ajuster selon l’environnement
 
-        self.motor.smooth_speed(0)
-        self.motor_servomotor.set_angle(90)  # Roue droite
+        self.robot.motor.smooth_speed(0)
+        angle = 0
+        angle = map_range(angle, -103, 77, 0, 180)
+        self.robot.change_direction(angle)  # Roue droite
+        self.robot.pan_servo.set_angle(90)
 
         print("[Obstacle] Contournement terminé. Reprise du suivi de ligne.")
         return False

@@ -15,4 +15,5 @@ trap cleanup SIGINT SIGTERM
 npm run dev -- --host
 
 
-cleanup
+#cleanup
+

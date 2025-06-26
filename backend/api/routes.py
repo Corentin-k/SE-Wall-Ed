@@ -189,4 +189,6 @@ def video_stream_thread():
 def handle_emergency(data):
     active = data.get('active', False)
     robot.set_emergency_mode(active)
+    emit('mode_status', {'mode': 'default', 'active': False, 
+         'message': f"Mode emergency {'activé' if active else 'désactivé'}"}, broadcast=True)
     emit('emergency', {'active': active}, broadcast=True)

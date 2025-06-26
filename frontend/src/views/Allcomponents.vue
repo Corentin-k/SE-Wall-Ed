@@ -3,7 +3,7 @@
     <!-- Colonne 1 -->
     <div class="column">
       <Camera />
-     
+      <Radar class="radar" />     
     </div>
 
     <!-- Colonne 2 -->
@@ -29,7 +29,7 @@ import Lidar from "../components/Lidar.vue";
 import Settings from "../components/Settings.vue";
 import Mode from "../components/Mode.vue";
 import ColorPicker from "../components/ColorPicker.vue";
-
+import Radar from "../components/RadarChart.vue";
 export default defineComponent({
   name: "Allcomponents",
   components: {
@@ -40,6 +40,7 @@ export default defineComponent({
     Settings,
     Mode,
     ColorPicker,
+    Radar,
   },
 });
 </script>
@@ -64,5 +65,8 @@ export default defineComponent({
 }
 .color-picker {
   transform: scale(0.7);
+}
+.radar {
+  transform: scale(0.8);
 }
 </style>

@@ -21,8 +21,8 @@ def shutdown_handler(signum=None, frame=None):
 
 # On passe la fonction SANS les parenthèses
 signal.signal(signal.SIGINT, shutdown_handler)
-signal.signal(signal.SIGTERM, shutdown_handler)
-atexit.register(robot.shutdown_robot)
+#signal.signal(signal.SIGTERM, shutdown_handler)
+#atexit.register(robot.shutdown_robot)
 
 if __name__ == "__main__":
     try:
