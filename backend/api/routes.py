@@ -192,3 +192,70 @@ def handle_emergency(data):
     emit('mode_status', {'mode': 'default', 'active': False, 
          'message': f"Mode emergency {'activé' if active else 'désactivé'}"}, broadcast=True)
     emit('emergency', {'active': active}, broadcast=True)
+
+# ---------------Color Detection Routes---------------------------------------
+@robot_routes.route('/color_detection/toggle', methods=['POST'])
+def toggle_color_detection():
+    """Active/désactive la détection de couleur"""
+    data = request.get_json() or {}
+    enabled = data.get("enabled", True)
+    
+    try:
+        robot.enable_color_detection(enabled)
+        return jsonify({
+            "message": f"Détection de couleur {'activée' if enabled else 'désactivée'}",
+            "enabled": enabled
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@robot_routes.route('/color_detection/status', methods=['GET'])
+def get_color_detection_status():
+    """Récupère l'état de la détection de couleur et les couleurs détectées"""
+    try:
+        return jsonify({
+            "enabled": robot.color_detection_enabled,
+            "detected_colors": robot.get_detected_colors()
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ---------------Color Detection WebSocket Events-------------------------
+@socketio.on('toggle_color_detection')
+def handle_toggle_color_detection(data):
+    """Active/désactive la détection de couleur via WebSocket"""
+    enabled = data.get('enabled', True)
+    robot.enable_color_detection(enabled)
+    emit('color_detection_status', {
+        'enabled': enabled,
+        'message': f"Détection de couleur {'activée' if enabled else 'désactivée'}"
+    }, broadcast=True)
+
+@socketio.on('get_detected_colors')
+def handle_get_detected_colors():
+    """Retourne les couleurs actuellement détectées"""
+    colors = robot.get_detected_colors()
+    emit('detected_colors', {
+        'colors': colors,
+        'count': len(colors)
+    })
+
+def color_detection_thread():
+    """Thread pour diffuser les couleurs détectées en temps réel"""
+    import time
+    while True:
+        try:
+            if robot and robot.color_detection_enabled:
+                colors = robot.get_detected_colors()
+                if colors:
+                    socketio.emit('detected_colors_update', {
+                        'colors': colors,
+                        'timestamp': time.time()
+                    })
+            time.sleep(0.5)  # Diffuser toutes les 500ms
+        except Exception as e:
+            print(f"Erreur dans le thread de détection couleur: {e}")
+            time.sleep(1)
+
+# Démarrer le thread de détection de couleur
+threading.Thread(target=color_detection_thread, daemon=True).start()
