@@ -290,7 +290,7 @@ class WS2812LED(threading.Thread):
             self.set_all_led_color_data(255, 0, 0); self.show(); time.sleep(interval)
             self.set_all_led_color_data(0, 0, 0);   self.show(); time.sleep(interval/5)
         # on éteint tout à la fin
-        self.led_close()
+        self.shutdown()
 
     def start_police(self, interval=0.3):
         if self._police_thread and self._police_thread.is_alive():
@@ -352,9 +352,9 @@ if __name__ == '__main__':
                     led.show()
                     time.sleep(0.002)
         else:
-            led.led_close()
+            led.shutdown()
     except KeyboardInterrupt:
-        led.led_close()
+        led.shutdown()
         
     
 

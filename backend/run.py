@@ -1,7 +1,6 @@
 import sys
 import os
 
-import logging
 import atexit
 import signal
 
@@ -26,8 +25,6 @@ signal.signal(signal.SIGINT, shutdown_handler)
 
 if __name__ == "__main__":
     try:
-        logging.basicConfig(level=logging.INFO,
-                            format="%(levelname)s: %(message)s")
         app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False, threaded=True)
     except Exception as e:
         shutdown_handler()

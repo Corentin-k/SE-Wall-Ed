@@ -29,7 +29,7 @@ import Lidar from "../components/Lidar.vue";
 import Settings from "../components/Settings.vue";
 import Mode from "../components/Mode.vue";
 import ColorPicker from "../components/ColorPicker.vue";
-import Radar from "../components/RadarChart.vue";
+import Radar from "../components/RadarChartLive.vue";
 export default defineComponent({
   name: "Allcomponents",
   components: {

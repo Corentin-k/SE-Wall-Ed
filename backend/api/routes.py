@@ -2,7 +2,7 @@
 from flask_socketio import SocketIO, emit
 from robot.line_tracking_processing import LineTrackingController
 from robot.color_detection import ColorDetectionController
-from robot.radar_processing import RadarController
+#from robot.radar_processing import RadarController
 
 from . import socketio
 from sensors import Camera
@@ -281,7 +281,7 @@ def handle_start_radar_scan(data):
         
         # Lancer le scan radar
         from robot.radar_scan_utils import radar_scan
-        scan_result = radar_scan(robot, min_angle, max_angle, step)
+        scan_result = radar_scan(robot, min_angle, max_angle)
         
         # Préparer les données pour le frontend
         radar_data = {
@@ -301,10 +301,8 @@ def handle_start_radar_scan(data):
         
         # Envoyer les données au frontend
         emit('radar_scan_result', radar_data, broadcast=True)
-        logger.info(f"Radar scan completed: {len(radar_data['angles'])} points")
         
     except Exception as e:
-        logger.error(f"Radar scan error: {e}")
         emit('error', {"error": f"Radar scan failed: {str(e)}"})
 
 @socketio.on('get_radar_status')
@@ -323,5 +321,4 @@ def handle_get_radar_status():
         }
         emit('radar_status', status)
     except Exception as e:
-        logger.error(f"Radar status error: {e}")
         emit('error', {"error": str(e)})
