@@ -2,6 +2,12 @@
   <div class="settings">
     <h2>Mode</h2>
 
+    <!-- Zone d'erreur -->
+    <div v-if="connectionError || errorMessage" class="error-banner">
+      <span v-if="connectionError">⚠️ {{ errorMessage }}</span>
+      <span v-else-if="errorMessage">❌ {{ errorMessage }}</span>
+    </div>
+
     <button @click="activatePolice">
       {{ policeActive ? "Arrêter Police Mode" : "Démarrer Police Mode" }}
     </button>
@@ -68,14 +74,28 @@ const automaticProcessingActive = ref(false);
 const emergencyActive = ref(false);
 const colorDetectionActive = ref(true); // Activé par défaut
 const detectedColors = ref([]);
+const connectionError = ref(false);
+const errorMessage = ref("");
 
 onMounted(() => {
   socket.on("connect", () => {
     console.log("Connected to Socket.IO server!");
+    connectionError.value = false;
+    errorMessage.value = "";
   });
 
   socket.on("disconnect", () => {
     console.log("Disconnected from Socket.IO server.");
+    connectionError.value = true;
+    errorMessage.value = "Connexion perdue avec le robot";
+  });
+
+  socket.on("error", (data: { error: string }) => {
+    console.error("Socket error:", data);
+    errorMessage.value = data.error;
+    setTimeout(() => {
+      errorMessage.value = "";
+    }, 5000);
   });
 
   socket.on("emergency", (data: { active: boolean }) => {
@@ -224,6 +244,30 @@ button {
 button:focus {
   outline: 3px solid #bb86fc;
   outline-offset: 2px;
+}
+
+/* Bannière d'erreur */
+.error-banner {
+  background-color: #d32f2f;
+  color: white;
+  padding: 0.75rem;
+  border-radius: 5px;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-weight: bold;
+  animation: pulse-error 2s infinite;
+}
+
+@keyframes pulse-error {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 /* Style pour le bouton de détection de couleur */

@@ -16,14 +16,6 @@ def map_range(x,in_min,in_max,out_min,out_max):
         return (x - in_min)/(in_max - in_min) *(out_max - out_min) +out_min
 
 class Robot:
-    # Couleurs à détecter
-    COLOR_RANGES = {
-        'Rouge': ([0, 150, 120], [5, 255, 255], (0, 0, 255)),
-        'Vert': ([35, 80, 60], [90, 255, 255], (0, 255, 0)),
-        'Bleu': ([105, 120, 50], [130, 255, 255], (255, 0, 0)),
-        'Jaune': ([18, 100, 100], [35, 255, 255], (0, 255, 255)),
-    }
-    
     def __init__(self):
         # Initialisation des composants
         self.camera = Camera()
@@ -41,9 +33,10 @@ class Robot:
 
         self.line_tracker = None
         
-        # Activation de la détection de couleur
-        self.color_detection_enabled = True
-        self.detected_colors = []
+        # Contrôleur de détection de couleur
+        self.color_controller = None
+        # Activer la détection de couleur par défaut
+        self.enable_color_detection(True)
 
         # self.init_controller_thread()
         logger.info("Robot initialized")
@@ -112,8 +105,8 @@ class Robot:
         """
         Récupère une frame de la caméra avec ou sans détection de couleur
         """
-        if self.color_detection_enabled:
-            return self.get_camera_frame_with_colors()
+        if self.color_controller and self.color_controller.enabled:
+            return self.color_controller.get_camera_frame_with_colors()
         else:
             return self.camera.get_frame()
 
@@ -213,16 +206,26 @@ class Robot:
         time.sleep(0.5)
 
     def set_emergency_mode(self, active: bool):
-            if active:
-                self.shutdown_robot()
-            else:
+        if active:
+            self.shutdown_robot()
+        else:
+            try:
                 self.__init__()
+            except Exception as e:
+                print(f"Erreur lors de la réinitialisation du robot : {e}")
 
     def shutdown_robot(self):
+        """Arrêt propre et sécurisé du robot"""
+        print("Début de l'arrêt du robot")
         try:
+            # Arrêt des mouvements
             self.stop_robot()
-            self.shutdown_head()
+            
+            # Arrêt de la tête
+            if hasattr(self, '_head_thread') and self._head_thread.is_alive():
+                self.shutdown_head()
 
+            # Arrêt du contrôleur
             if self.controller:
                 try:
                     self.set_controller(None)
@@ -230,122 +233,57 @@ class Robot:
                     print(f"Erreur arrêt contrôleur : {e}")
                 self.controller = None
 
-            for sensor in [self.camera, self.ultra, self.line_tracker, self.buzzer,self.ws2812,self.pan_servo, self.tilt_servo, self.motor_servomotor, self.leds]:
-                if sensor:
+            # Arrêt des capteurs et actuateurs
+            components = [
+                ('camera', self.camera),
+                ('ultrasonic', self.ultra),
+                ('line_tracker', self.line_tracker),
+                ('buzzer', self.buzzer),
+                ('ws2812', self.ws2812),
+                ('pan_servo', self.pan_servo),
+                ('tilt_servo', self.tilt_servo),
+                ('motor_servo', self.motor_servomotor),
+                ('leds', self.leds)
+            ]
+            
+            for name, component in components:
+                if component:
                     try:
-                        sensor.shutdown()
+                        if hasattr(component, 'shutdown'):
+                            component.shutdown()
                     except Exception as e:
-                        print(f"Erreur lors de l'arrêt du capteur {sensor.__class__.__name__} : {e}")
+                        print(f"Erreur lors de l'arrêt de {name}: {e}")
 
-            print("✔️ Shutdown complet")
         except Exception as e:
             print(f"Erreur inattendue pendant le shutdown: {e}")
 
-    def detect_and_draw_colors(self, frame):
-        """
-        Détecte et dessine les couleurs sur l'image
-        :param frame: Image OpenCV (format BGR)
-        :return: Liste des couleurs détectées
-        """
-        if not self.color_detection_enabled:
-            return []
-            
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        detected_colors = []
+    def update_speed(self, speed: int):
+        """Met à jour la vitesse du robot"""
+        if 0 <= speed <= 100:
+            self.speed = speed
+        else:
+            raise ValueError("Speed must be between 0 and 100")
 
-        for name, (lower, upper, bgr_color) in self.COLOR_RANGES.items():
-            lower_np = np.array(lower)
-            upper_np = np.array(upper)
-            mask = cv2.inRange(hsv, lower_np, upper_np)
-            
-            # Filtrage morphologique pour réduire le bruit
-            kernel = np.ones((5, 5), np.uint8)
-            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-            
-            # Trouver les contours
-            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-            for cnt in contours:
-                if cv2.contourArea(cnt) > 500:  # Seuil de taille minimum
-                    x, y, w, h = cv2.boundingRect(cnt)
-                    # Dessiner le rectangle
-                    cv2.rectangle(frame, (x, y), (x + w, y + h), bgr_color, 2)
-                    # Ajouter le texte
-                    cv2.putText(frame, name, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, bgr_color, 2)
-                    detected_colors.append({
-                        'name': name,
-                        'x': x,
-                        'y': y,
-                        'width': w,
-                        'height': h,
-                        'center_x': x + w // 2,
-                        'center_y': y + h // 2
-                    })
-                    break  # Une seule détection par couleur
-
-        self.detected_colors = detected_colors
-        return detected_colors
-
-    def get_camera_frame_with_colors(self):
-        """
-        Récupère une frame de la caméra avec détection de couleur
-        :return: Frame JPEG encodée avec annotations de couleur
-        """
-        try:
-            # Récupérer la frame JPEG de la caméra
-            frame_bytes = self.camera.get_frame()
-            if frame_bytes is None:
-                return None
-
-            # Décoder l'image JPEG en format OpenCV
-            np_arr = np.frombuffer(frame_bytes, np.uint8)
-            frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-            if frame is None:
-                return frame_bytes  # Retourner la frame originale si décodage échoue
-
-            # Optionnel : retourner l'image horizontalement
-            frame = cv2.flip(frame, 1)
-
-            # Appliquer la détection de couleur
-            detected = self.detect_and_draw_colors(frame)
-            
-            # Log des couleurs détectées (optionnel)
-            if detected:
-                color_names = [color['name'] for color in detected]
-                logger.debug(f"Couleurs détectées: {color_names}")
-
-            # Ré-encoder l'image en JPEG
-            _, buffer = cv2.imencode('.jpg', frame)
-            return buffer.tobytes()
-
-        except Exception as e:
-            logger.error(f"Erreur lors de la détection de couleur: {e}")
-            # En cas d'erreur, retourner la frame originale
-            return self.camera.get_frame()
-
-    def enable_color_detection(self, enabled=True):
-        """
-        Active ou désactive la détection de couleur
-        :param enabled: True pour activer, False pour désactiver
-        """
-        self.color_detection_enabled = enabled
-        logger.info(f"Détection de couleur {'activée' if enabled else 'désactivée'}")
-
-    def get_detected_colors(self):
-        """
-        Retourne la liste des couleurs actuellement détectées
-        :return: Liste des couleurs avec leurs positions
-        """
-        return self.detected_colors.copy()
-
-    def set_color_detection_threshold(self, threshold):
-        """
-        Modifie le seuil de détection (taille minimum des objets)
-        :param threshold: Nouveau seuil en pixels
-        """
-        # Cette méthode pourrait être étendue pour modifier dynamiquement le seuil
-        logger.info(f"Seuil de détection mis à jour: {threshold}")
+    # -------------------- Méthodes de détection de couleur -------------------
+    def enable_color_detection(self, enabled: bool = True):
+        """Active ou désactive la détection de couleur"""
+        if enabled and self.color_controller is None:
+            from robot.color_detection import ColorDetectionController
+            self.color_controller = ColorDetectionController(self)
+        
+        if self.color_controller:
+            self.color_controller.enable_detection(enabled)
+    
+    @property
+    def color_detection_enabled(self) -> bool:
+        """Retourne l'état de la détection de couleur"""
+        return self.color_controller is not None and self.color_controller.enabled
+    
+    def get_detected_colors(self) -> list:
+        """Retourne les couleurs actuellement détectées"""
+        if self.color_controller:
+            return self.color_controller.get_detected_colors()
+        return []
 
 def tests(robot):
     print("Doing some tests...")
@@ -353,4 +291,3 @@ def tests(robot):
     min_angle, max_angle = result.get_nearest_obstacle_limits()
     print("nearest obstacle : ", min_angle, max_angle)
     robot.pan_servo.set_angle((min_angle + max_angle) / 2)
-

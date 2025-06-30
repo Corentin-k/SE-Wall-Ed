@@ -1,8 +1,9 @@
 from gpiozero import InputDevice
 import time 
+from robot.config import line_pin_left, line_pin_middle, line_pin_right
 
 class LineTracker:
-    def __init__(self, pin_left=22, pin_middle=27, pin_right=17):
+    def __init__(self, pin_left=line_pin_left, pin_middle=line_pin_middle, pin_right=line_pin_right):
         
         self.sensor_left = InputDevice(pin=pin_left)
         self.sensor_middle = InputDevice(pin=pin_middle)

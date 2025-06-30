@@ -6,14 +6,14 @@ from adafruit_pca9685 import PCA9685
 from adafruit_motor import motor
 import threading
 
-MOTOR_M1_IN1 =  15      #Define the positive pole of M1
-MOTOR_M1_IN2 =  14      #Define the negative pole of M1
-MOTOR_M2_IN1 =  12      #Define the positive pole of M2
-MOTOR_M2_IN2 =  13      #Define the negative pole of M2
-MOTOR_M3_IN1 =  11      #Define the positive pole of M3
-MOTOR_M3_IN2 =  10      #Define the negative pole of M3
-MOTOR_M4_IN1 =  8       #Define the positive pole of M4
-MOTOR_M4_IN2 =  9       #Define the negative pole of M4
+# Import des constantes depuis le fichier de configuration
+from robot.config import (
+    MOTOR_M1_IN1, MOTOR_M1_IN2,
+    MOTOR_M2_IN1, MOTOR_M2_IN2,
+    MOTOR_M3_IN1, MOTOR_M3_IN2,
+    MOTOR_M4_IN1, MOTOR_M4_IN2,
+    DEFAULT_ACCELERATION_RATE
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class Motors:
         pwm_motor = PCA9685(i2c, address=0x5f) #default 0x40
         pwm_motor.frequency = 50
 
-        self.acceleration_rate = 50 # default acceleration rate
+        self.acceleration_rate = DEFAULT_ACCELERATION_RATE  
         self.distance = 0
 
         self.motor1 = motor.DCMotor(pwm_motor.channels[MOTOR_M1_IN1],pwm_motor.channels[MOTOR_M1_IN2] )

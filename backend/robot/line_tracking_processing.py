@@ -1,7 +1,9 @@
-﻿import threading
-import time
+﻿import time
+import logging
 from robot.controller import Controller
 from robot.radar_scan_utils import *
+
+logger = logging.getLogger(__name__)
 
 def map_range(x, in_min, in_max, out_min, out_max):
     return (x - in_min) / (in_max - in_min) * (out_max - out_min) + out_min
@@ -172,3 +174,4 @@ class LineTrackingController(Controller):
 
         print("[Obstacle] Contournement terminé. Reprise du suivi de ligne.")
         return False
+

@@ -36,3 +36,8 @@ MOTOR_M4_IN2 =  9       #Define the negative pole of M4
 line_pin_left = 22
 line_pin_middle = 27
 line_pin_right = 17
+
+# Configuration par défaut
+DEFAULT_MOTOR_SPEED = 50
+DEFAULT_SERVO_ANGLE = 90
+DEFAULT_ACCELERATION_RATE = 50

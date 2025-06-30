@@ -1,6 +1,7 @@
 ﻿from flask import Blueprint, request, jsonify, Response
 from flask_socketio import SocketIO, emit
 from robot.line_tracking_processing import LineTrackingController
+from robot.color_detection import ColorDetectionController
 from robot.radar_processing import RadarController
 
 from . import socketio
@@ -257,5 +258,70 @@ def color_detection_thread():
             print(f"Erreur dans le thread de détection couleur: {e}")
             time.sleep(1)
 
-# Démarrer le thread de détection de couleur
-threading.Thread(target=color_detection_thread, daemon=True).start()
+
+
+# Démarrer le thread de détection de couleur seulement s'il n'existe pas déjà
+if not hasattr(color_detection_thread, '_started'):
+    color_detection_thread._started = True
+    threading.Thread(target=color_detection_thread, daemon=True).start()
+
+# ---------------Radar Scan WebSocket Events-------------------------
+@socketio.on('start_radar_scan')
+def handle_start_radar_scan(data):
+    """Démarre un scan radar et diffuse les résultats"""
+    try:
+        if robot is None:
+            emit('error', {"error": "Robot not initialized"})
+            return
+        
+        # Paramètres du scan (avec valeurs par défaut)
+        min_angle = data.get('min_angle', 0)
+        max_angle = data.get('max_angle', 180)
+        step = data.get('step', 5)
+        
+        # Lancer le scan radar
+        from robot.radar_scan_utils import radar_scan
+        scan_result = radar_scan(robot, min_angle, max_angle, step)
+        
+        # Préparer les données pour le frontend
+        radar_data = {
+            'angles': [],
+            'distances': [],
+            'min_angle': scan_result.min_angle,
+            'max_angle': scan_result.max_angle,
+            'timestamp': time.time()
+        }
+        
+        # Convertir les données en format utilisable par le frontend
+        angle_step = (scan_result.max_angle - scan_result.min_angle) / len(scan_result.array_result)
+        for i, distance in enumerate(scan_result.array_result):
+            angle = scan_result.min_angle + i * angle_step
+            radar_data['angles'].append(angle)
+            radar_data['distances'].append(distance)
+        
+        # Envoyer les données au frontend
+        emit('radar_scan_result', radar_data, broadcast=True)
+        logger.info(f"Radar scan completed: {len(radar_data['angles'])} points")
+        
+    except Exception as e:
+        logger.error(f"Radar scan error: {e}")
+        emit('error', {"error": f"Radar scan failed: {str(e)}"})
+
+@socketio.on('get_radar_status')
+def handle_get_radar_status():
+    """Retourne l'état actuel du radar"""
+    try:
+        if robot is None:
+            emit('error', {"error": "Robot not initialized"})
+            return
+        
+        status = {
+            'pan_angle': robot.pan_servo.current_angle,
+            'tilt_angle': robot.tilt_servo.current_angle,
+            'distance': robot.ultra.get_distance_cm(),
+            'timestamp': time.time()
+        }
+        emit('radar_status', status)
+    except Exception as e:
+        logger.error(f"Radar status error: {e}")
+        emit('error', {"error": str(e)})
