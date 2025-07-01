@@ -184,7 +184,7 @@ class Robot:
             if self.controller:
                 self.controller.stop()
                 self.motor.smooth_speed(0)
-                self.motor_servomotor.set_angle(90)
+                self.motor_servomotor.set_angle(0)
                 self.stop_head()
             self.controller = controller
             if self.controller:
@@ -202,7 +202,7 @@ class Robot:
         Arrête les moteurs et réinitialise les servos à leur position centrale.
         """
         self.motor.smooth_speed(0)
-        self.motor_servomotor.set_angle(90)
+        self.motor_servomotor.set_angle(0)
         time.sleep(0.5)
 
     def set_emergency_mode(self, active: bool):

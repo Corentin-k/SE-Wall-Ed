@@ -4,9 +4,11 @@ import busio
 from adafruit_motor import servo
 from adafruit_pca9685 import PCA9685
 import keyboard 
-
-class ServoMotors:
-    def __init__(self, channel, min_pulse=500, max_pulse=2400, actuation_range=180, initial_angle=90, step_size=2):
+def map_range(x,in_min,in_max,out_min,out_max):
+        return (x - in_min)/(in_max - in_min) *(out_max - out_min) +out_min
+class ServoMotors: 
+    def __init__(self, channel, min_pulse=500, max_pulse=2400, 
+    actuation_range=180, initial_angle=90, step_size=2):
         """
         Initialise un objet ServoMotors pour contrôler un servo spécifique.
         Garde une trace de l'angle actuel et permet des mouvements par incréments.
@@ -23,21 +25,24 @@ class ServoMotors:
                                  actuation_range=actuation_range)
         self.current_angle = initial_angle 
         self.step_size = step_size         
-        self.set_angle(self.current_angle) 
-
+        if self.channel ==0 :
+             self.set_angle(0) 
+        else:
+             self.set_angle(initial_angle)
     def set_angle(self, angle):
         """
         Définit l'angle du servo, en s'assurant qu'il reste dans les limites de 0 à 180 degrés.
         """
-        if angle < 0:
-            angle = 0
-        elif angle > 180:
-            angle = 180
-        #if self.channel == 0:
+        if self.channel == 0:
          #  if angle < 73:
           #       angle = 73
            # elif angle > 118:
             #     angle = 118
+            angle = map_range(angle, -103, 77, 0, 180)
+        if angle < 0:
+            angle = 0
+        elif angle > 180:
+            angle = 180
         self.current_angle = angle 
         self.servo.angle = angle
 

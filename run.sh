@@ -12,7 +12,7 @@ cleanup() {
 
 trap cleanup SIGINT SIGTERM
 
-npm run dev -- --host
+#npm run dev -- --host
 
 
 #cleanup

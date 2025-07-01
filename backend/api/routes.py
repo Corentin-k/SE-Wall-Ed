@@ -112,7 +112,7 @@ def turn_wheel(data):
     elif direction == "right":
         angle = -30
     
-    angle = map_range(angle, -103, 77, 0, 180)
+    #angle = map_range(angle, -106, 73, 0, 180)
     robot.change_direction(angle)
 
 @socketio.on('move_head')

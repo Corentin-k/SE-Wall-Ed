@@ -6,7 +6,7 @@ class Controller:
         self._stop_event = threading.Event()
         self._thread = None
     
-    def start_controller(self,update_interval: float = 1/20):
+    def start_controller(self,update_interval: float = 1/50):
         self._stop_event.clear()
         self._thread = threading.Thread(target=self._run_loop,args=(update_interval,),
                                          daemon=True)
