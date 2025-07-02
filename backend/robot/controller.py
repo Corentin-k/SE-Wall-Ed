@@ -12,7 +12,8 @@ class Controller:
                                          daemon=True)
         self._thread.start()
         self.start()
-    def start():
+    
+    def start(self):
         pass
 
 
