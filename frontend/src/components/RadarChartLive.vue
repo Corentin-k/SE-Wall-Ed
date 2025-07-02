@@ -250,8 +250,6 @@ onBeforeUnmount(() => {
   max-width: 500px;
   margin: 2rem auto;
   color: white;
-  border: 2px solid #bb86fc;
-  box-shadow: 0 4px 15px rgba(187, 134, 252, 0.3);
 }
 
 .radar-container h3 {

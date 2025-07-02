@@ -92,7 +92,7 @@ export default defineComponent({
       console.log("Envoi de la couleur :", this.displayColor);
       try {
         const response = await axios.post(
-          import.meta.env.VITE_ROBOT_BASE_URL+"/led/color",
+          import.meta.env.VITE_ROBOT_BASE_URL + "/led/color",
           {
             color: this.displayColor,
           },
@@ -137,7 +137,7 @@ export default defineComponent({
   border-radius: 10px;
   padding: 2rem;
   max-width: 300px;
-  margin: 2rem auto;
+  margin: 0 auto;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   text-align: center;
 }

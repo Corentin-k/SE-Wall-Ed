@@ -1,60 +1,94 @@
 <template>
-  <div class="settings">
-    <h2>Mode</h2>
+  <div class="mode-container">
+    <div class="card">
+      <h2>⚙️ Modes Robot</h2>
 
-    <!-- Zone d'erreur -->
-    <div v-if="connectionError || errorMessage" class="error-banner">
-      <span v-if="connectionError">⚠️ {{ errorMessage }}</span>
-      <span v-else-if="errorMessage">❌ {{ errorMessage }}</span>
-    </div>
+      <!-- Zone d'erreur -->
+      <div v-if="connectionError || errorMessage" class="error-banner">
+        <span v-if="connectionError">⚠️ {{ errorMessage }}</span>
+        <span v-else-if="errorMessage">❌ {{ errorMessage }}</span>
+      </div>
 
-    <button @click="activatePolice">
-      {{ policeActive ? "Arrêter Police Mode" : "Démarrer Police Mode" }}
-    </button>
-
-    <button @click="toggleLineTracking">
-      {{ lineTrackingActive ? "Stop Line Tracking" : "Start Line Tracking" }}
-    </button>
-    <button @click="toggleAutomaticProcessing">
-      {{
-        automaticProcessingActive
-          ? "Stop Automatic Processing"
-          : "Start Automatic Processing"
-      }}
-    </button>
-
-    <button
-      @click="toggleColorDetection"
-      :class="{ active: colorDetectionActive }"
-    >
-      {{
-        colorDetectionActive ? "Stop Color Detection" : "Start Color Detection"
-      }}
-    </button>
-
-    <button
-      :class="['emergency-btn', { active: emergencyActive }]"
-      @click="toggleEmergency"
-    >
-      {{ emergencyActive ? "Restart" : "Emergency" }}
-    </button>
-
-    <!-- Section d'affichage des couleurs détectées -->
-    <div
-      v-if="colorDetectionActive && detectedColors.length > 0"
-      class="detected-colors"
-    >
-      <h3>🎨 Couleurs détectées:</h3>
-      <div class="color-list">
-        <div
-          v-for="color in detectedColors"
-          :key="`${color.name}-${color.x}-${color.y}`"
-          class="color-item"
+      <!-- Mode Controls Grid -->
+      <div class="mode-grid">
+        <button
+          @click="activatePolice"
+          class="mode-btn police-btn"
+          :class="{ active: policeActive }"
         >
-          <span class="color-name">{{ color.name }}</span>
-          <span class="color-position"
-            >({{ color.center_x }}, {{ color.center_y }})</span
+          <span class="btn-icon">🚨</span>
+          <span class="btn-text">{{
+            policeActive ? "Arrêter Police" : "Mode Police"
+          }}</span>
+        </button>
+
+        <button
+          @click="toggleLineTracking"
+          class="mode-btn line-btn"
+          :class="{ active: lineTrackingActive }"
+        >
+          <span class="btn-icon">🛤️</span>
+          <span class="btn-text">{{
+            lineTrackingActive ? "Stop Ligne" : "Suivi Ligne"
+          }}</span>
+        </button>
+
+        <button
+          @click="toggleAutomaticProcessing"
+          class="mode-btn auto-btn"
+          :class="{ active: automaticProcessingActive }"
+        >
+          <span class="btn-icon">🤖</span>
+          <span class="btn-text">{{
+            automaticProcessingActive ? "Stop Auto" : "Mode Auto"
+          }}</span>
+        </button>
+
+        <button
+          @click="toggleColorDetection"
+          class="mode-btn color-btn"
+          :class="{ active: colorDetectionActive }"
+        >
+          <span class="btn-icon">🎨</span>
+          <span class="btn-text">{{
+            colorDetectionActive ? "Stop Couleur" : "Détection Couleur"
+          }}</span>
+        </button>
+      </div>
+
+      <!-- Emergency Button -->
+      <div class="emergency-section">
+        <button
+          class="emergency-btn"
+          :class="{ active: emergencyActive }"
+          @click="toggleEmergency"
+        >
+          <span class="emergency-icon">{{
+            emergencyActive ? "🔄" : "🛑"
+          }}</span>
+          <span class="emergency-text">{{
+            emergencyActive ? "Redémarrer" : "Arrêt d'Urgence"
+          }}</span>
+        </button>
+      </div>
+
+      <!-- Section d'affichage des couleurs détectées -->
+      <div
+        v-if="colorDetectionActive && detectedColors.length > 0"
+        class="detected-colors"
+      >
+        <h3>🎨 Couleurs détectées:</h3>
+        <div class="color-list">
+          <div
+            v-for="color in detectedColors"
+            :key="`${color.name}-${color.x}-${color.y}`"
+            class="color-item"
           >
+            <span class="color-name">{{ color.name }}</span>
+            <span class="color-position"
+              >({{ color.center_x }}, {{ color.center_y }})</span
+            >
+          </div>
         </div>
       </div>
     </div>
@@ -220,12 +254,12 @@ async function fetchColorDetectionStatus() {
   --default-color: #bb86fc;
 }
 
-.settings {
+.card {
   background-color: #1e1e1e;
   border-radius: 10px;
   padding: 2rem;
   max-width: 350px;
-  margin: 2rem auto;
+  margin: 0 auto;
   color: #e0e0e0;
 }
 
@@ -350,5 +384,12 @@ button.active:hover {
   color: #bb86fc;
   font-family: monospace;
   font-size: 0.8rem;
+}
+.btn-text {
+  color: white;
+}
+.mode-btn {
+  background-color: #1e1e1e;
+  border: 2px solid var(--border-color);
 }
 </style>
