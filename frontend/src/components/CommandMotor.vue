@@ -39,7 +39,7 @@
             </button>
 
             <div class="center-indicator">
-              <div class="camera-icon">📹</div>
+              <div class="camera-icon">🏍️</div>
             </div>
 
             <button

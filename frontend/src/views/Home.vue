@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <h1>Bonjour. Je suis Baymax</h1>
+    <h1>Bonjour. Je suis Wall-Ed</h1>
     <p>Votre assistant de santé personnel</p>
     <Vue3Lottie
       animation-link="https://assets2.lottiefiles.com/packages/lf20_GbabwrUY2k.json"
@@ -16,10 +16,10 @@
         </div>
       </router-link>
 
-      <router-link to="/temperature" class="feature-item">
+      <router-link to="/Allcomponents" class="feature-item">
         <div>
-          <h3>Temperature Monitoring</h3>
-          <p>Monitor the temperature inside the robot.</p>
+          <h3>All components</h3>
+          <p>Dashboard to control all components of the robot.</p>
         </div>
       </router-link>
     </div>

@@ -5,6 +5,7 @@ import Camera from "@/components/Camera.vue";
 import CommandMotor from "@/components/CommandMotor.vue";
 import Allcomponents from "@/views/Allcomponents.vue";
 import Mode from "@/components/Mode.vue";
+
 const routes = [
   { path: "/", redirect: "/allcomponents" },
   { path: "/home", name: "Home", component: Home },
@@ -17,6 +18,7 @@ const routes = [
   { path: "/camera", name: "Camera", component: Camera },
   { path: "/allcomponents", name: "Allcomponents", component: Allcomponents },
   { path: "/line_tracking", name: "LineTracking", component: Mode },
+  { path: "/mode", name: "Mode", component: Mode },
 ];
 
 const index = createRouter({

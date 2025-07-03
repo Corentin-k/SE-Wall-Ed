@@ -1,8 +1,6 @@
 <template>
   <div id="app">
-    <!-- Mobile Menu Toggle -->
-    <!-- <div class="mobile-header">
-      <div class="logo">🤖 Robot Control</div>
+    <div class="mobile-nav-wrapper">
       <button
         class="mobile-menu-toggle"
         @click="toggleMobileMenu"
@@ -12,63 +10,41 @@
         <span></span>
         <span></span>
       </button>
-    </div>
 
-   
-    <nav :class="{ 'mobile-open': mobileMenuOpen }">
-      <div class="nav-container">
-        <div class="nav-brand desktop-only">🤖 Robot Control</div>
-        <div class="nav-links">
-          <router-link to="/home" class="nav-item" @click="closeMobileMenu">
-            <i class="icon">🏠</i>
-            <span>Home</span>
-          </router-link>
-          <router-link to="/color" class="nav-item" @click="closeMobileMenu">
-            <i class="icon">💡</i>
-            <span>LED</span>
-          </router-link>
-          <router-link to="/camera" class="nav-item" @click="closeMobileMenu">
-            <i class="icon">📹</i>
-            <span>Camera</span>
-          </router-link>
-          <router-link to="/motor" class="nav-item" @click="closeMobileMenu">
-            <i class="icon">🎮</i>
-            <span>Motor</span>
-          </router-link>
-          <router-link
-            to="/Allcomponents"
-            class="nav-item"
-            @click="closeMobileMenu"
-          >
-            <i class="icon">⚙️</i>
-            <span>All</span>
-          </router-link>
-          <router-link
-            to="/line_tracking"
-            class="nav-item"
-            @click="closeMobileMenu"
-          >
-            <i class="icon">🛤️</i>
-            <span>Line</span>
-          </router-link>
+      <nav :class="{ 'mobile-open': mobileMenuOpen }">
+        <div class="nav-container">
+          <div class="nav-links">
+            <router-link to="/home" class="nav-item" @click="closeMobileMenu">
+              <i class="icon">🏠</i><span>Home</span>
+            </router-link>
+            <router-link to="/color" class="nav-item" @click="closeMobileMenu">
+              <i class="icon">💡</i><span>LED</span>
+            </router-link>
+            <router-link to="/camera" class="nav-item" @click="closeMobileMenu">
+              <i class="icon">📹</i><span>Camera</span>
+            </router-link>
+            <router-link to="/motor" class="nav-item" @click="closeMobileMenu">
+              <i class="icon">🎮</i><span>Motor</span>
+            </router-link>
+            <router-link to="/Mode" class="nav-item" @click="closeMobileMenu">
+              <i class="icon">🛤️</i><span>Modes</span>
+            </router-link>
+            <router-link
+              to="/Allcomponents"
+              class="nav-item"
+              @click="closeMobileMenu"
+            >
+              <i class="icon">⚙️</i><span>All</span>
+            </router-link>
+          </div>
         </div>
-      </div>
-    </nav> -->
+      </nav>
+    </div>
 
     <!-- Main Content -->
     <main class="main-content">
       <router-view></router-view>
     </main>
-
-    <!-- Footer -->
-    <!-- <footer>
-      <div class="footer-content">
-        <p>© 2024 Corentin-k</p>
-        <p class="datetime">{{ currentDateTime }}</p>
-      </div>
-    </footer> -->
-
-    <!-- Mobile Menu Overlay -->
     <div
       class="mobile-overlay"
       :class="{ active: mobileMenuOpen }"
@@ -165,6 +141,10 @@ export default defineComponent({
 }
 
 .mobile-menu-toggle {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  z-index: 1100;
   background: none;
   border: none;
   cursor: pointer;
@@ -200,12 +180,21 @@ export default defineComponent({
 
 /* Navigation */
 nav {
-  background-color: var(--surface-color);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 1000;
-  border-radius: 11px;
+  left: -280px; /* caché par défaut */
+  width: 280px;
+  height: 100vh;
+  background-color: var(--surface-color);
+  transition: left 0.3s ease;
+  z-index: 1001;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+  border-right: 1px solid var(--border-color);
+  padding-top: 70px; /* pour éviter de cacher le bouton */
+}
+
+nav.mobile-open {
+  left: 0;
 }
 
 .nav-container {
@@ -225,9 +214,8 @@ nav {
 
 .nav-links {
   display: flex;
-  align-items: center;
-  margin-left: auto;
-  gap: 0.5rem;
+  flex-direction: column; /* ← chaque élément sur une ligne */
+  align-items: stretch;
 }
 
 .nav-item {
@@ -260,8 +248,7 @@ nav {
 /* Main Content */
 .main-content {
   flex: 1;
-  padding: 2rem 1rem;
-  max-width: 1200px;
+  padding: 0 2rem 1rem;
   margin: 0 auto;
   width: 100%;
 }
@@ -297,12 +284,13 @@ footer {
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
-  z-index: 999;
+  z-index: 1000;
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 
 .mobile-overlay.active {
+  display: block;
   opacity: 1;
 }
 
@@ -337,88 +325,14 @@ button:disabled {
   transform: none;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .mobile-header {
-    display: flex;
-  }
-
-  .desktop-only {
-    display: none;
-  }
-
-  nav {
-    position: fixed;
-    top: 70px;
-    left: -100%;
-    width: 280px;
-    height: calc(100vh - 70px);
-    background-color: var(--surface-color);
-    transition: left 0.3s ease;
-    z-index: 1000;
-    border-right: 1px solid var(--border-color);
-  }
-
-  nav.mobile-open {
-    left: 0;
-  }
-
-  nav.mobile-open ~ .mobile-overlay {
-    display: block;
-  }
-
-  .nav-container {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 0;
-    height: 100%;
-    border-radius: 10px;
-  }
-
-  .nav-links {
-    flex-direction: column;
-    margin: 0;
-    gap: 0;
-    padding: 1rem 0;
-  }
-
-  .nav-item {
-    padding: 1rem 1.5rem;
-    border-radius: 0;
-    border-bottom: 1px solid var(--border-color);
-    justify-content: flex-start;
-  }
-
-  .nav-item:hover {
-    transform: none;
-    background-color: rgba(187, 134, 252, 0.1);
-    color: var(--primary-color);
-  }
-
-  .main-content {
-    padding: 1rem;
-    margin-top: 70px;
-  }
-
-  .footer-content {
-    flex-direction: column;
-    gap: 0.5rem;
-    text-align: center;
-    padding: 1rem;
-  }
+/* Cacher le menu mobile complet sur les grands écrans */
+.mobile-nav-wrapper {
+  display: none;
 }
 
-@media (max-width: 480px) {
-  .main-content {
-    padding: 0.5rem;
-  }
-
-  .nav-item span {
-    font-size: 0.9rem;
-  }
-
-  .logo {
-    font-size: 1rem;
+@media (max-width: 1500px) {
+  .mobile-nav-wrapper {
+    display: block;
   }
 }
 </style>

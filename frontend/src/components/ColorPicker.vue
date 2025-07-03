@@ -208,6 +208,8 @@ h2 {
 
 .apply-button {
   background-color: var(--default-color);
+  color: white;
+  border: 2px solid var(--border-color);
 }
 
 .apply-button:hover {

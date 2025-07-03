@@ -18,7 +18,7 @@
         >
           <span class="btn-icon">🚨</span>
           <span class="btn-text">{{
-            policeActive ? "Arrêter Police" : "Mode Police"
+            policeActive ? "Stop" : "Police Mode"
           }}</span>
         </button>
 
@@ -29,7 +29,7 @@
         >
           <span class="btn-icon">🛤️</span>
           <span class="btn-text">{{
-            lineTrackingActive ? "Stop Ligne" : "Suivi Ligne"
+            lineTrackingActive ? "Stop Line" : "Line Tracking"
           }}</span>
         </button>
 
@@ -40,7 +40,7 @@
         >
           <span class="btn-icon">🤖</span>
           <span class="btn-text">{{
-            automaticProcessingActive ? "Stop Auto" : "Mode Auto"
+            automaticProcessingActive ? "Stop Auto" : "Automatic Processing"
           }}</span>
         </button>
 
@@ -51,7 +51,7 @@
         >
           <span class="btn-icon">🎨</span>
           <span class="btn-text">{{
-            colorDetectionActive ? "Stop Couleur" : "Détection Couleur"
+            colorDetectionActive ? "Stop Color" : "Color Detection"
           }}</span>
         </button>
       </div>
@@ -67,7 +67,7 @@
             emergencyActive ? "🔄" : "🛑"
           }}</span>
           <span class="emergency-text">{{
-            emergencyActive ? "Redémarrer" : "Arrêt d'Urgence"
+            emergencyActive ? "Restart" : "Emergency Stop"
           }}</span>
         </button>
       </div>
