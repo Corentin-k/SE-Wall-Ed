@@ -2,13 +2,14 @@ import cv2
 import numpy as np
 import time
 from robot.controller import Controller
+from sensors.rgb_leds import RGBLEDs
+from robot.config import Left_R, Left_G, Left_B, Right_R, Right_G, Right_B
 
 # ============ COULEURS FIXES À DÉTECTER ============
+# Seules les couleurs Rouge et Vert, avec des plages plus restrictives pour limiter les faux positifs
 color_ranges = {
-    'Rouge': ([0, 150, 120], [5, 255, 255], (0, 0, 255)),
-    'Vert': ([35, 80, 60], [90, 255, 255], (0, 255, 0)),
-    'Bleu': ([105, 120, 50], [130, 255, 255], (255, 0, 0)),
-    'Jaune': ([18, 100, 100], [35, 255, 255], (0, 255, 255)),
+    'Rouge': ([0, 180, 120], [8, 255, 255], (0, 0, 255)),   # resserré sur le rouge vif
+    'Vert': ([45, 120, 80], [85, 255, 255], (0, 255, 0)),   # resserré sur le vert franc
 }
 
 class ColorDetectionController(Controller):
@@ -17,19 +18,19 @@ class ColorDetectionController(Controller):
     Gère la détection et l'annotation des couleurs dans le flux vidéo.
     """
     
-    # Couleurs à détecter
+    # Couleurs à détecter (seulement Rouge et Vert)
     COLOR_RANGES = {
-        'Rouge': ([0, 150, 120], [5, 255, 255], (0, 0, 255)),
-        'Vert': ([35, 80, 60], [90, 255, 255], (0, 255, 0)),
-        'Bleu': ([105, 120, 50], [130, 255, 255], (255, 0, 0)),
-        'Jaune': ([18, 100, 100], [35, 255, 255], (0, 255, 255)),
+        'Rouge': ([0, 180, 120], [8, 255, 255], (0, 0, 255)),
+        'Vert': ([45, 120, 80], [85, 255, 255], (0, 255, 0)),
     }
     
     def __init__(self, robot):
         super().__init__(robot)
         self.enabled = True
         self.detected_colors = []
-        self.detection_threshold = 500  
+        self.robot = robot
+        self.detection_threshold = 1200  # seuil augmenté pour limiter les petits faux positifs
+       
         
     def start(self):
         """Initialise le contrôleur de détection de couleur"""
@@ -51,17 +52,22 @@ class ColorDetectionController(Controller):
             return []
             
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        color_to_hex = {
+            "Rouge": "#FF0000",
+            "Vert": "#00FF00",
+        }
         detected_colors = []
+        color_found = None
 
         for name, (lower, upper, bgr_color) in self.COLOR_RANGES.items():
             lower_np = np.array(lower)
             upper_np = np.array(upper)
             mask = cv2.inRange(hsv, lower_np, upper_np)
-            
-            # Filtrage morphologique pour réduire le bruit
-            kernel = np.ones((5, 5), np.uint8)
-            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+        
+            # Filtrage morphologique plus fort pour réduire le bruit
+            kernel = np.ones((7, 7), np.uint8)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=2)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
             
             # Trouver les contours
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -82,11 +88,31 @@ class ColorDetectionController(Controller):
                         'center_x': x + w // 2,
                         'center_y': y + h // 2
                     })
+                    color_found = name
                     break  # Une seule détection par couleur
+
+        # Allumer les LEDs selon la couleur détectée (priorité à la première trouvée)
+        if color_found and color_found in color_to_hex:
+            if color_found == "Rouge":
+                self.robot.ws2812.set_all_led_color_data(255,0,0)
+                self.robot.leds.set_color_hex(color_to_hex[color_found])
+            else :
+                self.robot.ws2812.set_all_led_color_data(0,255,0)
+                self.robot.leds.set_color_hex(color_to_hex[color_found])
+        else:
+             self.robot.ws2812.set_all_led_color_data(0,0,0)
+             self.robot.leds.set_color_hex(color_to_hex[color_found])
 
         self.detected_colors = detected_colors
         return detected_colors
-    
+
+    def on_stop(self):
+        """
+        Appelée lors de l'arrêt par le contrôleur
+        """
+        self.enabled = False
+        self.robot.leds.clear_all()
+
     def get_camera_frame_with_colors(self):
         """
         Récupère une frame de la caméra avec détection de couleur
@@ -143,12 +169,8 @@ class ColorDetectionController(Controller):
         :param threshold: Nouveau seuil en pixels
         """
         self.detection_threshold = threshold
-    
-    def on_stop(self):
-        """Appelée lors de l'arrêt du contrôleur"""
-        self.enabled = False
 
-
+# La fonction main et la version utilitaire sont laissées pour test manuel si besoin
 def detect_and_draw_colors(frame, color_ranges):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     detected_colors = []
@@ -157,13 +179,13 @@ def detect_and_draw_colors(frame, color_ranges):
         lower_np = np.array(lower)
         upper_np = np.array(upper)
         mask = cv2.inRange(hsv, lower_np, upper_np)
-        kernel = np.ones((5, 5), np.uint8)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+        kernel = np.ones((7, 7), np.uint8)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=2)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for cnt in contours:
-            if cv2.contourArea(cnt) > 500:
+            if cv2.contourArea(cnt) > 1200:
                 x, y, w, h = cv2.boundingRect(cnt)
                 cv2.rectangle(frame, (x, y), (x + w, y + h), bgr_color, 2)
                 cv2.putText(frame, name, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, bgr_color, 2)

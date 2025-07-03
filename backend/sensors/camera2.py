@@ -63,10 +63,7 @@ class Camera:
             try:
                 while True:
                     # camera.capture_file(stream, format='jpeg')
-                    img = camera.capture_array()
-                    
-                    if cv2.imencode('.jpg', img)[0]:
-                        yield cv2.imencode('.jpg', img)[1].tobytes()
+                    yield camera.capture_array()
             finally:
                 camera.stop()
 

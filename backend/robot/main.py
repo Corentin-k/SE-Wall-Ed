@@ -9,6 +9,7 @@ import numpy as np
 
 from robot.radar_processing import *
 from robot.line_tracking_processing import *
+from robot.camera_processing import *
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,8 @@ class Robot:
         self.color_controller = None
         # Activer la détection de couleur par défaut
         self.enable_color_detection(True)
+
+        start_camera_processing(self)
 
         # self.init_controller_thread()
         logger.info("Robot initialized")

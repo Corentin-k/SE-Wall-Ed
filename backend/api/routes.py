@@ -74,6 +74,7 @@ def video_feed():
     def gen():
         while True:
             frame = robot.get_camera_frame()
+            frame = cv2.imencode('.jpg', frame)[1].tobytes()
             if not frame:
                 time.sleep(0.01)
                 continue
@@ -93,6 +94,7 @@ def gen():
     """Fonction génératrice de flux vidéo."""
     while True:
         frame = robot.get_camera_frame()
+        frame = cv2.imencode('.jpg', frame)[1].tobytes()
         yield(b'--frame\r\n'
               b'Content-Type:image/jpeg\r\n\r\n'+frame+b'\r\n')
 
@@ -167,6 +169,7 @@ def video_stream():
     """Generates video frames for the video stream."""
     while True:
         frame = robot.get_camera_frame()
+        frame = cv2.imencode('.jpg', frame)[1].tobytes()
         if not frame:
             time.sleep(0.01)
             continue
