@@ -16,28 +16,59 @@ Le projet se compose de deux modules principaux :
 
    - Langage : Python
    - Framework : Flask (exposition d’une API RESTful)
-   - Fonctionnalités : contrôle des moteurs, des servomoteurs, des LEDs, acquisition vidéo, intégration des capteurs
+   - Fonctionnalités : 
+     - Contrôle des moteurs avec gestion d'accélération/décélération
+     - Commande des servomoteurs (pan/tilt)
+     - Gestion des LEDs RGB et WS2812
+     - Acquisition vidéo en temps réel
+     - Système radar avec scan automatique
+     - Détection et suivi de ligne
+     - Reconnaissance de couleurs et formes
+     - Détection de flèches directionnelles
+     - Mode police avec signalisation
 
 2. **Frontend**
 
    - Langage : JavaScript
    - Framework : Vue.js
-   - Rôle : interface web permettant le pilotage manuel du robot
+   - Fonctionnalités :
+     - Interface web responsive pour pilotage manuel
+     - Visualisation du flux vidéo en temps réel
+     - Affichage des données radar
+     - Contrôle des différents modes autonomes
+     - Panneau de configuration avancé
 
 ## Structure du dépôt
 
-```text
+``text
 /.
-├── backend/             # Serveur Flask et logique robotique
-│   ├── api/             # Point d’entrée de l’application
-│   │    ├── /routes/    # Définition des routes REST
-│   ├── robot/           # Implémentation de la classe Robot et de ses composants
-│   │    ├── /config.py  # Configuration des broches GPIO et canaux I2C
-│   ├── sensors/         # Modules capteurs (distance, ligne, buzzer…)
-│   └── requirements.txt
-└── frontend/            # Application Vue.js
-    ├── public/
-    └── src/             # Composants, vues
+├── backend/                     # Serveur Flask et logique robotique
+│   ├── api/                     # Point d'entrée de l'application
+│   │   └── routes/              # Définition des routes REST
+│   ├── robot/                   # Implémentation de la classe Robot
+│   │   ├── main.py              # Classe Robot principale
+│   │   ├── config.py            # Configuration GPIO et I2C
+│   │   ├── radar_processing.py  # Contrôleur radar et navigation
+│   │   ├── line_tracking_processing.py  # Suivi de ligne
+│   │   ├── camera_processing.py # Traitement vidéo et détection
+│   │   └── color_detection.py   # Reconnaissance de couleurs
+│   ├── sensors/                 # Modules capteurs
+│   │   ├── ultrasonic.py        # Capteur de distance
+│   │   ├── line_tracker.py      # Capteurs de ligne
+│   │   ├── motor.py             # Contrôle moteurs
+│   │   ├── servo.py             # Servomoteurs
+│   │   ├── leds.py              # LEDs RGB
+│   │   └── ws2812.py            # LEDs WS2812
+│   ├── requirements.txt
+│   └── run.py                   # Script de lancement
+├── frontend/                    # Application Vue.js
+│   ├── public/
+│   ├── src/
+│   │   ├── components/          # Composants Vue
+│   │   └── views/               # Vues principales
+│   ├── package.json
+│   └── vite.config.js
+└── run.sh                       # Script de lancement global
 ```
 
 ## Installation
@@ -85,30 +116,42 @@ Le projet se compose de deux modules principaux :
    ./run.sh
    ```
 
-## Phase 1 : 06/06/2024 – 11/06/2024
 
-### Fonctionnalités implémentées
+## Fonctionnalités implémentées
 
-1. **Flux vidéo**
+- 🎥 Caméra
 
-   - Captation continue via Picamera2
-   - Affichage en temps réel dans l’interface web
+   - Flux vidéo en temps réel via Picamera2
+   - Détection de couleurs (rouge, vert, bleu, etc.)
+   - Détection de flèches directionnelles
 
-2. **Commandes LED RGB**
+- 🤖 Navigation autonome
 
-   - Pilotage de deux LED rgb frontales (gauche/droite)
-   - Choix de la couleur via code hexadécimal
+   - Système radar : Scan automatique 360° avec évitement d'obstacles
+   - Suivi de ligne : Navigation autonome sur trajectoire prédéfinie
+   - Évitement d'obstacles : Détection et contournement automatique
 
-3. **Contrôle de la tête (servomoteurs)**
+- 🎛️ Contrôle moteurs
 
-   - Axe panoramique (gauche/droite)
-   - Axe d’inclinaison (haut/bas)
-   - Commande via l’interface web (I,J,K,L pour les mouvements)
+   - Moteurs DC avec gestion d'accélération progressive
+   - Servomoteurs pour mouvement de tête (pan/tilt)
+   - Contrôle directionnel précis
 
-4. **Capteurs embarqués**
+- 💡 Système d'éclairage
 
-   - Capteur de distance à ultrasons
-   - Buzzer programmable
-   - Motorisation DC avec gestion de l’accélération et de la décélération
+   - Mode police avec clignotants
+   - Feedback visuel selon l'état du robot
 
----
+- 🔧 Contrôleurs avancés
+
+   - RadarController : Gestion du scan radar et navigation
+   - LineTrackingController : Suivi de ligne automatique
+   - ColorDetectionController : Reconnaissance de couleurs
+   - CameraController : Traitement vidéo temps réel
+
+- 📡 Communication
+
+    - API REST complète
+    - WebSocket pour données temps réel
+    - Interface web 
+    - Contrôle à distance

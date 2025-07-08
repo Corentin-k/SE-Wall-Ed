@@ -93,15 +93,24 @@ class ColorDetectionController(Controller):
 
         # Allumer les LEDs selon la couleur détectée (priorité à la première trouvée)
         if color_found and color_found in color_to_hex:
-            if color_found == "Rouge":
-                self.robot.ws2812.set_all_led_color_data(255,0,0)
-                self.robot.leds.set_color_hex(color_to_hex[color_found])
-            else :
-                self.robot.ws2812.set_all_led_color_data(0,255,0)
-                self.robot.leds.set_color_hex(color_to_hex[color_found])
+            if detected_colors[0]['name'] == 'Rouge':
+                try:
+                    self.robot.ws2812.set_all_led_color(255, 0, 0)  # Utiliser set_all_led_color
+                    self.robot.leds.set_color_hex(color_to_hex[color_found])
+                except Exception as e:
+                    print(f"Erreur LEDs Rouge: {e}")
+            elif detected_colors[0]['name'] == 'Vert':
+                try:
+                    self.robot.ws2812.set_all_led_color(0, 255, 0)  # Utiliser set_all_led_color
+                    self.robot.leds.set_color_hex(color_to_hex[color_found])
+                except Exception as e:
+                    print(f"Erreur LEDs Vert: {e}")
         else:
-             self.robot.ws2812.set_all_led_color_data(0,0,0)
-             self.robot.leds.set_color_hex(color_to_hex[color_found])
+            try:
+                self.robot.ws2812.set_all_led_color(0, 0, 0)  # Utiliser set_all_led_color
+                self.robot.leds.set_color_hex("#000000")
+            except Exception as e:
+                print(f"Erreur extinction LEDs: {e}")  
 
         self.detected_colors = detected_colors
         return detected_colors
@@ -133,11 +142,11 @@ class ColorDetectionController(Controller):
             # PAS d'inversion horizontale - caméra dans son orientation naturelle
 
             # Appliquer la détection de couleur
-            detected = self.detect_and_draw_colors(frame)
+            detected_colors = self.detect_and_draw_colors(frame)
             
-            # Log des couleurs détectées (optionnel)
-            if detected:
-                color_names = [color['name'] for color in detected]
+            # Log des détections
+            if detected_colors:
+                color_names = [color['name'] for color in detected_colors]
                 print(f"Couleurs détectées: {color_names}")
 
             # Ré-encoder l'image en JPEG

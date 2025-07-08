@@ -134,6 +134,17 @@ class WS2812LED(threading.Thread):
         for i in range(self.led_count):
             self.set_led_color_data(i, r, g, b)
         self.show()
+
+    def set_left_led_color(self, r, g, b):
+        #allumer les leds gauche 
+        for i in range(2,4 ):
+            self.set_led_color_data(i, r, g, b)
+        self.show()
+    def set_right_led_color(self, r, g, b):
+        #allumer les leds droite 
+        for i in range(5, self.led_count):
+            self.set_led_color_data(i, r, g, b)
+        self.show()
         
     def set_all_led_rgb(self, color):
         for i in range(self.led_count):

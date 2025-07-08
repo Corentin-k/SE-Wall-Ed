@@ -43,11 +43,6 @@ class LineTrackingController(Controller):
         turn_angle_right = -30
 
         if self.robot.ultra.get_distance_cm() < 37:
-            #print("[Obstacle] Obstacle détecté, changement de mode...")
-            # color detection de l'obstacle
-            # color = ColorDetectionController(self.robot).get_detected_colors()
-            # print(f"[Obstacle] Couleur détectée : {color}")
-            
             self.robot.motor.smooth_speed_and_wait(0)
             self.avoid_obstacle2()
 
@@ -106,7 +101,7 @@ class LineTrackingController(Controller):
                 self.robot.motor.smooth_speed_and_wait(0, acceleration_rate) # stop the robot before going forward
             if left == 0 and right == 1:
                 #print("Adjusting right (line slightly left)")
-                self.robot.change_direction(turn_angle_right-10)
+                self.robot.change_direction(turn_angle_right+10)
                 self.robot.motor.smooth_speed(robot_speed, acceleration=acceleration_rate)
             elif left == 1 and right == 0:
                 #print("Adjusting left (line slightly right)")
@@ -117,7 +112,6 @@ class LineTrackingController(Controller):
                 #print("Going straight (middle detected)")
                 self.robot.motor.smooth_speed(robot_speed, acceleration=acceleration_rate)
         else:
-            print("REPRISSSSSSSSSSSSSSSe")
             if self._previous_middle == 1:
                 self.robot.motor.smooth_speed_and_wait(0, acceleration_rate) # stop the robot before going forward
             if left == 1:
@@ -152,11 +146,11 @@ class LineTrackingController(Controller):
         self.robot.motor.smooth_speed_and_wait(0)
     
         self.robot.motor.smooth_speed(-35) 
-        time.sleep(0.8) 
+        time.sleep(0.52) 
         self.robot.motor.smooth_speed_and_wait(0)  # Stopper le robot après le reculz
         # Étape 2: Avancer vers la gauche et chercher la ligne
         #print("[Recherche ligne] Étape 2: Recherche vers la gauche...")
-        self.robot.change_direction(30)  # Tourner à gauche
+        self.robot.change_direction(-30)  # Tourner à gauche
         time.sleep(0.2)  # Laisser le temps de positionner les roues
 
         # Avancer en cherchant la ligne
@@ -189,12 +183,12 @@ class LineTrackingController(Controller):
             # Reculer dans la même direction (toujours tourné à gauche)
             self.robot.motor.smooth_speed(-35)
             print("[Recherche ligne] Étape 3: Recul dans la même direction...")
-            time.sleep(time_roate+0.1)  # Reculer suffisamment
+            time.sleep(time_roate-0.3)  # Reculer suffisamment
             self.robot.motor.smooth_speed_and_wait(0)
 
             # Étape 4: Tourner vers la droite et chercher
             #print("[Recherche ligne] z 4: Recherche vers la droite...")    
-            self.robot.change_direction(-27)  # Tourner à droite
+            self.robot.change_direction(30)  # Tourner à droite
             time.sleep(0.2)  # Laisser le temps de positionner les roues
             # Avancer vers la droite en cherchant
             self.robot.motor.smooth_speed(35) 
@@ -265,7 +259,7 @@ class LineTrackingController(Controller):
         self.robot.change_direction(angle)
         # Etape 4 : avancer jusqu'à ce que l'on retrouve la ligne.
         self.robot.motor.smooth_speed(vitesse, acceleration=150) 
-        time.sleep(2.5)
+        time.sleep(1.5)
         self.robot.change_direction(-angle)
         while self.robot.line_tracker.read_sensors()['middle'] == 0:
             pass

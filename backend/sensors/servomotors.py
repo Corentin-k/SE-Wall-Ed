@@ -38,7 +38,7 @@ class ServoMotors:
           #       angle = 73
            # elif angle > 118:
             #     angle = 118
-            angle = map_range(angle, -103, 77, 0, 180)
+            angle = map_range(angle, -90, 90, 0, 180)
         if angle < 0:
             angle = 0
         elif angle > 180:

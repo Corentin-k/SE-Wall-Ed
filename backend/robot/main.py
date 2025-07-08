@@ -11,6 +11,8 @@ from robot.radar_processing import *
 from robot.line_tracking_processing import *
 from robot.camera_processing import *
 
+
+
 logger = logging.getLogger(__name__)
 
 def map_range(x,in_min,in_max,out_min,out_max):
@@ -34,14 +36,12 @@ class Robot:
 
         self.line_tracker = None
         
-        # Contrôleur de détection de couleur
+        # Contrôleur de détection de couleur et flèches
         self.color_controller = None
         # Activer la détection de couleur par défaut
-        self.enable_color_detection(True)
-
-        start_camera_processing(self)
-
+        self.enable_color_detection(False)
         # self.init_controller_thread()
+        start_camera_processing(self)
         logger.info("Robot initialized")
         # tests(self)
 
@@ -107,11 +107,30 @@ class Robot:
     def get_camera_frame(self):
         """
         Récupère une frame de la caméra avec ou sans détection de couleur
+        Optimisé pour minimiser la latence
         """
-        if self.color_controller and self.color_controller.enabled:
-            return self.color_controller.get_camera_frame_with_colors()
-        else:
-            return self.camera.get_frame()
+        try:
+            # Prioriser le rendu des flèches si le contrôleur le supporte
+            if self.controller and hasattr(self.controller, 'get_camera_frame_with_arrows') and getattr(self.controller, 'arrow_detection_enabled', False):
+                return self.controller.get_camera_frame_with_arrows()
+            # Prioriser la vitesse - éviter le traitement couleur si possible
+            if self.color_controller and self.color_controller.enabled:
+                # Mode détection couleur (plus lent)
+                return self.color_controller.get_camera_frame_with_colors()
+            else:
+                # Mode rapide - frame directe
+                frame = self.camera.get_frame()
+                return frame
+        except Exception as e:
+            # Log silencieux pour éviter de ralentir
+            if hasattr(self, '_last_error_time'):
+                now = time.time()
+                if now - self._last_error_time > 5:  # Log une erreur toutes les 5 secondes max
+                    print(f"Erreur caméra: {e}")
+                    self._last_error_time = now
+            else:
+                self._last_error_time = time.time()
+            return None
 
     def move_head(self, pan, tilt):
         """
@@ -267,7 +286,7 @@ class Robot:
         else:
             raise ValueError("Speed must be between 0 and 100")
 
-    # -------------------- Méthodes de détection de couleur -------------------
+    # -------------------- Méthodes de détection de couleur et flèches -------------------
     def enable_color_detection(self, enabled: bool = True):
         """Active ou désactive la détection de couleur"""
         if enabled and self.color_controller is None:
@@ -276,6 +295,13 @@ class Robot:
         
         if self.color_controller:
             self.color_controller.enable_detection(enabled)
+    
+    
+    def get_detected_arrow(self):
+        """Retourne la direction de flèche détectée"""
+        if self.color_controller:
+            return self.color_controller.get_detected_arrow()
+        return None
     
     @property
     def color_detection_enabled(self) -> bool:

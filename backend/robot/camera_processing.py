@@ -1,5 +1,6 @@
 import cv2 as cv
 import time
+import numpy as np
 
 class Arrow:
     def __init__(self, start, end):
@@ -144,11 +145,13 @@ def get_arrow_direction():
 
 def camera_processing_thread(robot):
     while True:
-        frame = robot.get_camera_frame()
-        if frame is None:
-            continue
-        
-        print(frame)
+        frame_bytes = robot.camera.get_frame()
+        if frame_bytes is None:
+            return None
+
+        # 1) Décodage du JPEG
+        np_arr = np.frombuffer(frame_bytes, np.uint8)
+        frame = cv.imdecode(np_arr, cv.IMREAD_COLOR)
         
         find_arrows(frame)
 

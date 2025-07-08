@@ -3,12 +3,13 @@ from flask_socketio import SocketIO, emit
 from robot.line_tracking_processing import LineTrackingController
 from robot.color_detection import ColorDetectionController
 #from robot.radar_processing import RadarController
-
+from robot.automatic_processing import LabyrinthNavigationController
 from . import socketio
 from sensors import Camera
 import base64
 import time
 import threading
+import cv2
 robot_routes = Blueprint('robot_routes', __name__)
 robot = None
 police_on = False 
@@ -70,34 +71,43 @@ def set_mode_police():
 #        mimetype='multipart/x-mixed-replace;boundary=frame')
 @robot_routes.route('/camera')
 def video_feed():
-    """Flux MJPEG continu"""
+    """Flux MJPEG continu optimisé pour faible latence"""
     def gen():
         while True:
-            frame = robot.get_camera_frame()
-            frame = cv2.imencode('.jpg', frame)[1].tobytes()
-            if not frame:
-                time.sleep(0.01)
+            try:
+                frame = robot.get_camera_frame()
+                if frame is None:
+                    continue  # Pas de sleep - retry immédiatement
+                
+                # Si frame est déjà encodé en bytes (venant de camera.py), l'utiliser directement
+                if isinstance(frame, bytes):
+                    frame_bytes = frame
+                else:
+                    # Si frame est un array numpy, l'encoder avec paramètres optimisés
+                    encode_params = [
+                        int(cv2.IMWRITE_JPEG_QUALITY), 80,  # Qualité réduite pour plus de vitesse
+                        int(cv2.IMWRITE_JPEG_OPTIMIZE), 0,   # Pas d'optimisation pour plus de vitesse
+                    ]
+                    ret, buffer = cv2.imencode('.jpg', frame, encode_params)
+                    if not ret:
+                        continue
+                    frame_bytes = buffer.tobytes()
+                
+                yield (
+                    b'--frame\r\n'
+                    b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n'
+                )
+                # Pas de throttle artificiel - laisser la caméra dicter le rythme
+            except Exception as e:
+                print(f"Erreur dans le flux vidéo: {e}")
                 continue
-            yield (
-                b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n'
-            )
-            # throttle
-            time.sleep(1/30)
+    
     response = Response(gen(), mimetype='multipart/x-mixed-replace;boundary=frame')
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
+    response.headers['X-Accel-Buffering'] = 'no'  # Nginx: désactive le buffering
     return response
-    
-def gen():
-    """Fonction génératrice de flux vidéo."""
-    while True:
-        frame = robot.get_camera_frame()
-        frame = cv2.imencode('.jpg', frame)[1].tobytes()
-        yield(b'--frame\r\n'
-              b'Content-Type:image/jpeg\r\n\r\n'+frame+b'\r\n')
-
 # ---------------WebSocket Routes---------------------------------------
 @socketio.on('motor_move')
 def motor_move_route(data):
@@ -157,7 +167,7 @@ def handle_mode(data):
     if mode == 'ligne_tracking':
         ctrl = LineTrackingController(robot)
     elif mode == 'automatic_processing':
-        ctrl = RadarController(robot)
+        ctrl = LabyrinthNavigationController(robot)
     else:
         ctrl = None
     robot.set_controller(ctrl)
