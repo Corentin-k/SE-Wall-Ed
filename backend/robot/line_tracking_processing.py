@@ -96,7 +96,6 @@ class LineTrackingController(Controller):
         right = status['right']
         #print("left: {left}   middle: {middle}   right: {right}".format(**status))
         if middle == 1:
-            print("REPRISSSSSSSSSSSSSSSe")
             if self._previous_middle == 0:
                 self.robot.motor.smooth_speed_and_wait(0, acceleration_rate) # stop the robot before going forward
             if left == 0 and right == 1:
@@ -144,14 +143,72 @@ class LineTrackingController(Controller):
         #print("[Recherche ligne] Étape 1: Recul de sécurité...")
         
         self.robot.motor.smooth_speed_and_wait(0)
-    
-        self.robot.motor.smooth_speed(-35) 
-        time.sleep(0.52) 
-        self.robot.motor.smooth_speed_and_wait(0)  # Stopper le robot après le reculz
         # Étape 2: Avancer vers la gauche et chercher la ligne
         #print("[Recherche ligne] Étape 2: Recherche vers la gauche...")
-        self.robot.change_direction(-30)  # Tourner à gauche
+        self.robot.change_direction(-5)  # Tourner à gauche
         time.sleep(0.2)  # Laisser le temps de positionner les roues
+        self.robot.motor.smooth_speed(20)
+        time.sleep(1.5)
+
+        
+        # si le robot tourne à gauche et le capteur gauche détecte la ligne on est partie dans le bon sens 
+        # remettre les rouee droites
+        # reculer
+        # retourner à gauche 
+        # avancer et redecter la ligne 
+        if self.robot.line_tracker.read_sensors()['left'] == 1:
+            print("[Recherche ligne] ✓ Ligne retrouvée à droite!")
+            self.robot.motor.smooth_speed_and_wait(0)
+            self.robot.change_direction(0)
+            time.sleep(0.3)
+            self.robot.motor.smooth_speed_and_wait(-20)
+            time.sleep(0.5)  
+            self.robot.change_direction(-30)
+            self.robot.motor.smooth_speed(25) 
+             # Avancer doucement
+            timet=time.time()
+            while True:
+                sensors = self.robot.line_tracker.read_sensors()
+                if (sensors['middle'] == 1 or sensors['left'] == 1 or sensors['right'] == 1) and time.time() - timet > 2:
+                    print("[Recherche ligne] ✓ Ligne retrouvée à droite!")
+                    self._performing_right_angle = False
+                    return
+            self._performing_right_angle = False
+            return
+
+        else :
+            #reculer dans la même direction
+            self.robot.motor.smooth_speed(-20)
+            time.sleep(0.2)
+            self.robot.motor.smooth_speed_and_wait(0)  # Stopper le robot après le reculz
+            # Étape 2: Avancer vers la gauche et chercher la ligne
+            #print("[Recherche ligne] Étape 2: Recherche vers la gauche...")
+            self.robot.change_direction(5)  # Tourner à gauche
+            time.sleep(0.2)  # Laisser le temps de positionner les roues
+            self.robot.motor.smooth_speed(20)
+            time.sleep(0.5)
+            if self.robot.line_tracker.read_sensors()['right'] == 1:
+                print("[Recherche ligne] ✓ Ligne retrouvée à gauche!")
+                self.robot.motor.smooth_speed_and_wait(0)
+                self.robot.change_direction(0)
+                time.sleep(0.3)
+                self.robot.motor.smooth_speed_and_wait(-35)
+                time.sleep(0.5)
+                self.robot.change_direction(-30)
+                self.robot.motor.smooth_speed(25)
+                # Avancer doucement
+                timet=time.time()
+                while True:
+                   sensors = self.robot.line_tracker.read_sensors()
+                   if (sensors['middle'] == 1 or sensors['left'] == 1 or sensors['right'] == 1) and time.time() - timet > 1:
+                      self._performing_right_angle = False
+                      return
+                self._performing_right_angle = False
+                return
+        time.sleep(5000)
+
+
+
 
         # Avancer en cherchant la ligne
         self.robot.motor.smooth_speed(35) 
@@ -161,7 +218,7 @@ class LineTrackingController(Controller):
         self._last_line_detected = time.time()
         while time.time() - search_start < 3:  # Timeout de 3 secondes
             sensors = self.robot.line_tracker.read_sensors()
-            if (sensors['middle'] == 1 or sensors['left'] == 1 or sensors['right'] == 1) and time.time() - self._last_line_detected > 1.5:
+            if (sensors['middle'] == 1 or sensors['left'] == 1 or sensors['right'] == 1) and time.time() - self._last_line_detected > 1.7:
                 #print("[Recherche ligne] ✓ Ligne retrouvée vers la gauche!")
                 self.robot.motor.smooth_speed_and_wait(0)
                 self.robot.change_direction(0)  # Remettre direction droite
@@ -195,9 +252,9 @@ class LineTrackingController(Controller):
             search_start = time.time()
             line_found = False
             self._last_line_detected = time.time()
-            while time.time() - search_start < 3:  # Timeout de 3 secondes
+            while time.time() - search_start < 3.2:  # Timeout de 3 secondes
                 sensors = self.robot.line_tracker.read_sensors()
-                if (sensors['middle'] == 1 or sensors['left'] == 1 or sensors['right'] == 1) and time.time() - self._last_line_detected > 1.5:
+                if (sensors['middle'] == 1 or sensors['left'] == 1 or sensors['right'] == 1) and time.time() - self._last_line_detected > 0.4 :
                     #print("[Recherche ligne] ✓ Ligne retrouvée vers la gauche!")
                     self.robot.motor.smooth_speed_and_wait(0)
                     self.robot.change_direction(0)  # Remettre direction droite
@@ -252,14 +309,14 @@ class LineTrackingController(Controller):
         # Etape 2 : reculer légèrement pour braquer ensuite du bon côté
         time.sleep(1)
         self.robot.motor.smooth_speed(-vitesse, acceleration=150)
-        time.sleep(0.9)
+        time.sleep(0.8)
         self.robot.motor.smooth_speed_and_wait(0, acceleration=150)
         time.sleep(1)
         # Etape 3 : tourner à gauche ou à droite
         self.robot.change_direction(angle)
         # Etape 4 : avancer jusqu'à ce que l'on retrouve la ligne.
         self.robot.motor.smooth_speed(vitesse, acceleration=150) 
-        time.sleep(1.5)
+        time.sleep(2.3)
         self.robot.change_direction(-angle)
         while self.robot.line_tracker.read_sensors()['middle'] == 0:
             pass
