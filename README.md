@@ -40,7 +40,7 @@ Le projet se compose de deux modules principaux :
 
 ## Structure du dépôt
 
-``text
+```text
 /.
 ├── backend/                     # Serveur Flask et logique robotique
 │   ├── api/                     # Point d'entrée de l'application
